@@ -3,18 +3,11 @@
 #endif
 
 #include <algorithm>
-#include <charconv>
 #include <iostream>
 #include <string>
 #include <vector>
 
 #include "utils.hpp"
-
-unsigned int svtoi(std::string_view const &str) {
-  unsigned int result;
-  (void)std::from_chars(str.data(), str.data() + str.size(), result);
-  return result;
-}
 
 struct Problem {
   Problem(std::vector<std::string> const &lines) {

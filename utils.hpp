@@ -3,6 +3,8 @@
 #include <vector>
 
 std::vector<std::string> read_input_file(std::string filename);
+std::vector<unsigned int> ints(std::string line);
+unsigned int svtoi(std::string_view const &str);
 
 class StringIterator {
 public:

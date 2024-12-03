@@ -3,6 +3,7 @@
 #endif
 #include "utils.hpp"
 
+#include <charconv>
 #include <fstream>
 
 std::string_view StringIterator::next() {
@@ -21,17 +22,6 @@ std::string_view StringIterator::next() {
 
 bool StringIterator::hasNext() { return _begin < _string.size(); }
 
-#include "doctest.h"
-TEST_CASE("Split single char") {
-  std::string s = "|Abc|Def|Ghi|";
-  StringIterator it(s, '|');
-  CHECK_EQ(it.next(), "");
-  CHECK_EQ(it.next(), "Abc");
-  CHECK_EQ(it.next(), "Def");
-  CHECK_EQ(it.next(), "Ghi");
-  CHECK_FALSE(it.hasNext());
-}
-
 std::vector<std::string> read_input_file(std::string filename) {
   std::ifstream file(filename);
 
@@ -43,4 +33,35 @@ std::vector<std::string> read_input_file(std::string filename) {
 
   file.close();
   return result;
+}
+
+unsigned int svtoi(std::string_view const &str) {
+  unsigned int result;
+  (void)std::from_chars(str.data(), str.data() + str.size(), result);
+  return result;
+}
+
+std::vector<unsigned int> ints(std::string line) {
+
+  StringIterator it(line, ' ');
+  std::vector<unsigned int> result;
+  while (it.hasNext()) {
+    result.push_back(svtoi(it.next()));
+  }
+  return result;
+}
+
+#include "doctest.h"
+TEST_CASE("Split single char") {
+  std::string s = "|Abc|Def|Ghi|";
+  StringIterator it(s, '|');
+  CHECK_EQ(it.next(), "");
+  CHECK_EQ(it.next(), "Abc");
+  CHECK_EQ(it.next(), "Def");
+  CHECK_EQ(it.next(), "Ghi");
+  CHECK_FALSE(it.hasNext());
+}
+
+TEST_CASE("ints") {
+  CHECK_EQ(ints("1 2 3 4"), std::vector<unsigned int>{1, 2, 3, 4});
 }
