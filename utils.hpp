@@ -1,0 +1,19 @@
+#include <string>
+#include <string_view>
+#include <vector>
+
+std::vector<std::string> read_input_file(std::string filename);
+
+class StringIterator {
+public:
+  StringIterator(std::string const &string, char delimiter)
+      : _string(string), _delimiter(delimiter), _begin(0), _end(0) {}
+  std::string_view next();
+  bool hasNext();
+
+private:
+  std::string const &_string;
+  char _delimiter;
+  size_t _begin;
+  size_t _end;
+};

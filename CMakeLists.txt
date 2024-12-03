@@ -1,0 +1,32 @@
+cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
+project(AOC_2024 LANGUAGES CXX)
+enable_testing()
+# specify the C++ standard
+add_library(compiler_flags INTERFACE)
+target_compile_features(compiler_flags INTERFACE cxx_std_17)
+
+add_library(utils utils.cpp)
+add_executable(utils_test utils.cpp)
+target_include_directories(utils PRIVATE doctest)
+target_include_directories(utils_test PRIVATE doctest)
+target_compile_definitions(utils PRIVATE DOCTEST_CONFIG_DISABLE)
+target_link_libraries(utils PUBLIC compiler_flags)
+target_link_libraries(utils_test PUBLIC compiler_flags)
+
+add_executable(day_01 day_01.cpp)
+add_executable(day_01_test day_01.cpp)
+target_include_directories(day_01 PRIVATE doctest)
+target_include_directories(day_01_test PRIVATE doctest)
+target_compile_definitions(day_01 PRIVATE DOCTEST_CONFIG_DISABLE)
+target_link_libraries(day_01 PRIVATE utils)
+target_link_libraries(day_01_test PRIVATE utils)
+target_link_libraries(day_01 PUBLIC compiler_flags)
+target_link_libraries(day_01_test PUBLIC compiler_flags)
+
+add_test(NAME Day_01 COMMAND day_01_test)
+add_test(NAME Day_01_Part_1 COMMAND day_01 1 ../inputs/day_01.txt)
+set_tests_properties(Day_01_Part_1 PROPERTIES PASS_REGULAR_EXPRESSION "2166959")
+add_test(NAME Day_01_Part_2 COMMAND day_01 2 ../inputs/day_01.txt)
+set_tests_properties(Day_01_Part_2 PROPERTIES PASS_REGULAR_EXPRESSION "23741109")
+
+file(DOWNLOAD https://github.com/doctest/doctest/releases/download/v2.4.11/doctest.h doctest/doctest.h EXPECTED_MD5 0b7fbd89a158063beecba78eb8400fad)
