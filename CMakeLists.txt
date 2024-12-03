@@ -27,9 +27,9 @@ function(day number part_one_solution part_two_solution)
 
     add_test(NAME Day_${number} COMMAND day_${number}_test)
     add_test(NAME Day_${number}_Part_1 COMMAND day_${number} 1 ../inputs/day_${number}.txt)
-    set_tests_properties(Day_${number}_Part_1 PROPERTIES PASS_REGULAR_EXPRESSION ${part_one_solution})
+    set_tests_properties(Day_${number}_Part_1 PROPERTIES PASS_REGULAR_EXPRESSION ^${part_one_solution}\n$)
     add_test(NAME Day_${number}_Part_2 COMMAND day_${number} 2 ../inputs/day_${number}.txt)
-    set_tests_properties(Day_${number}_Part_2 PROPERTIES PASS_REGULAR_EXPRESSION ${part_two_solution})
+    set_tests_properties(Day_${number}_Part_2 PROPERTIES PASS_REGULAR_EXPRESSION ^${part_two_solution}\n$)
 endfunction()
 
 day(01 2166959 23741109)
