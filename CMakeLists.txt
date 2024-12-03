@@ -12,6 +12,7 @@ target_include_directories(utils_test PRIVATE doctest)
 target_compile_definitions(utils PRIVATE DOCTEST_CONFIG_DISABLE)
 target_link_libraries(utils PUBLIC compiler_flags)
 target_link_libraries(utils_test PUBLIC compiler_flags)
+add_test(NAME Utils COMMAND utils_test)
 
 add_executable(day_01 day_01.cpp)
 add_executable(day_01_test day_01.cpp)
