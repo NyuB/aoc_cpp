@@ -1,3 +1,5 @@
+#ifndef UTILS_HPP
+#define UTILS_HPP
 #include <string>
 #include <string_view>
 #include <vector>
@@ -19,3 +21,5 @@ private:
   size_t _begin;
   size_t _end;
 };
+
+#endif // UTILS_HPP
