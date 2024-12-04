@@ -92,6 +92,8 @@ public:
     return res;
   }
 
+  const std::string &operator[](size_t i) const { return grid[i]; }
+
   size_t width() const { return cols; }
 
   size_t height() const { return rows; }
@@ -114,7 +116,23 @@ unsigned int solve_part_one(std::vector<std::string> const &lines) {
 }
 
 unsigned int solve_part_two(std::vector<std::string> const &lines) {
-  return 24;
+  unsigned int res = 0;
+  Grid grid(lines);
+  for (size_t i = 1; i < grid.height() - 1; i++) {
+    for (size_t j = 1; j < grid.width() - 1; j++) {
+      if (grid[i][j] != 'A')
+        continue;
+      bool up_left_diag =
+          (grid[i - 1][j - 1] == 'S' && grid[i + 1][j + 1] == 'M') ||
+          (grid[i - 1][j - 1] == 'M' && grid[i + 1][j + 1] == 'S');
+      bool down_left_diag =
+          (grid[i + 1][j - 1] == 'S' && grid[i - 1][j + 1] == 'M') ||
+          (grid[i + 1][j - 1] == 'M' && grid[i - 1][j + 1] == 'S');
+      if (up_left_diag && down_left_diag)
+        res++;
+    }
+  }
+  return res;
 }
 
 #ifdef DOCTEST_CONFIG_DISABLE
@@ -147,6 +165,22 @@ TEST_CASE("Example Part One") {
                "MXMXAXMASX",
            }),
            18);
+}
+
+TEST_CASE("Example Part Two") {
+  CHECK_EQ(solve_part_two({
+               "MMMSXXMASM",
+               "MSAMXMSMSA",
+               "AMXSXMAAMM",
+               "MSAMASMSMX",
+               "XMASAMXAMM",
+               "XXAMMXXAMA",
+               "SMSMSASXSS",
+               "SAXAMASAAA",
+               "MAMMMXMMMM",
+               "MXMXAXMASX",
+           }),
+           9);
 }
 
 TEST_CASE("Single lines") { CHECK_EQ(solve_part_one({"XMAS"}), 1); }
