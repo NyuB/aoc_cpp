@@ -1,3 +1,5 @@
+PY=py
+
 default: fmt test
 
 fmt:
@@ -6,8 +8,8 @@ fmt:
 test: rebuild
 	ctest --test-dir build -V
 
-test_%: rebuild
-	build/$*_test
+test_%: rebuild day_%.cpp
+	build/day_$*_test
 
 rebuild: configure FORCE
 	cmake --build build
@@ -15,3 +17,6 @@ FORCE:
 
 configure: CMakeLists.txt
 	cmake -B build -G Ninja
+
+day_%.cpp:
+	$(PY) day_template.py $*
