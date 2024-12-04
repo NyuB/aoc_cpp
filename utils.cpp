@@ -22,7 +22,7 @@ std::string_view StringIterator::next() {
 
 bool StringIterator::hasNext() { return _begin < _string.size(); }
 
-std::vector<std::string> read_input_file(std::string filename) {
+std::vector<std::string> read_input_file(std::string const &filename) {
   std::ifstream file(filename);
 
   std::string line;

@@ -8,8 +8,8 @@ fmt:
 test: rebuild
 	ctest --test-dir build -V
 
-test_%: rebuild day_%.cpp
-	build/day_$*_test
+test_%: rebuild %.cpp
+	build/$*_test
 
 rebuild: configure FORCE
 	cmake --build build
