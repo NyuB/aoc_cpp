@@ -36,5 +36,6 @@ day(01 2166959 23741109)
 day(02 686 717)
 day(03 168539636 97529391)
 day(04 2575 2041)
+day(05 4662 TODO)
 
 file(DOWNLOAD https://github.com/doctest/doctest/releases/download/v2.4.11/doctest.h doctest/doctest.h EXPECTED_MD5 0b7fbd89a158063beecba78eb8400fad)
