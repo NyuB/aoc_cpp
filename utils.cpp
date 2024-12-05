@@ -41,15 +41,17 @@ unsigned int svtoi(std::string_view const &str) {
   return result;
 }
 
-std::vector<unsigned int> ints(std::string line) {
+std::vector<unsigned int> ints(std::string line, char delimiter) {
 
-  StringIterator it(line, ' ');
+  StringIterator it(line, delimiter);
   std::vector<unsigned int> result;
   while (it.hasNext()) {
     result.push_back(svtoi(it.next()));
   }
   return result;
 }
+
+std::vector<unsigned int> ints(std::string line) { return ints(line, ' '); }
 
 #include "doctest.h"
 TEST_CASE("Split single char") {
@@ -64,4 +66,5 @@ TEST_CASE("Split single char") {
 
 TEST_CASE("ints") {
   CHECK_EQ(ints("1 2 3 4"), std::vector<unsigned int>{1, 2, 3, 4});
+  CHECK_EQ(ints("1|2|3|4", '|'), std::vector<unsigned int>{1, 2, 3, 4});
 }
