@@ -37,3 +37,10 @@ if __name__ == '__main__':
     with open(filename, 'w') as f:
         f.write(template)
     print(f"Generated {filename}")
+    input_filename = f"inputs/day_{day}.txt" 
+    print("Generating empty input file")
+    with open(input_filename, 'w') as f:
+        f.write('')
+    print(f"Generated {input_filename}")
+    
+
