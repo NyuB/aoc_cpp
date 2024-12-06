@@ -27,6 +27,11 @@ int main(int argc, char *argv[]) {
 #endif
 
 #include "doctest/doctest.h"
+
+TEST_CASE("Example Part One") {
+  CHECK_EQ(solve_part_one({}), 0);
+}
+
 """
 
 if __name__ == '__main__':
