@@ -12,6 +12,9 @@ struct Position {
   unsigned int i;
   unsigned int j;
 
+  bool operator==(Position const &other) const {
+    return i == other.i && j == other.j;
+  }
   bool operator<(Position const &other) const {
     if (i == other.i)
       return j < other.j;
@@ -37,6 +40,14 @@ struct Direction {
     return h == other.h && v == other.v && opposite == other.opposite;
   }
 
+  bool operator<(Direction const &other) const {
+    if (h != other.h)
+      return h < other.h;
+    if (v != other.v)
+      return v < other.v;
+    return !opposite && other.opposite;
+  }
+
   Direction turn_right() const {
     if (*this == UP) {
       return RIGHT;
@@ -59,9 +70,42 @@ const Direction Direction::DOWN = {1, 0, false};
 const Direction Direction::LEFT = {0, 1, true};
 const Direction Direction::RIGHT = {0, 1, false};
 
+struct GuardPathPosition {
+  Position position;
+  Direction direction;
+
+  bool operator<(GuardPathPosition const &other) const {
+    if (other.position == position)
+      return direction < other.direction;
+    return position < other.position;
+  }
+};
+
+class GuardPath {
+public:
+  void append(GuardPathPosition p) {
+    path.push_back(p);
+    auto insertion = uniques.insert(p);
+    cyclic = !insertion.second;
+  }
+  std::set<Position> unique_positions() const {
+    std::set<Position> upos;
+    for (const auto &p : path) {
+      upos.insert(p.position);
+    }
+    return upos;
+  }
+  bool is_cyclic() const { return cyclic; }
+
+private:
+  std::vector<GuardPathPosition> path;
+  std::set<GuardPathPosition> uniques;
+  bool cyclic = false;
+};
+
 class Grid {
 public:
-  Grid(std::vector<std::string> const &lines) : grid(lines) {
+  Grid(std::vector<std::string> lines) : grid(lines) {
     if (lines.empty()) {
       rows = 0;
       cols = 0;
@@ -88,36 +132,55 @@ public:
   }
 
   const std::string &operator[](size_t i) const { return grid[i]; }
+  char &operator[](Position const &p) { return grid[p.i][p.j]; }
 
   size_t width() const { return cols; }
 
   size_t height() const { return rows; }
 
 private:
-  std::vector<std::string> const &grid;
+  std::vector<std::string> grid;
   size_t rows;
   size_t cols;
 };
 
-unsigned int solve_part_one(std::vector<std::string> const &lines) {
-  std::set<Position> visited;
-  Grid grid(lines);
-  Position current = grid.find('^');
+GuardPath guard_path(Grid const &grid) {
+  GuardPath path;
+  Position position = grid.find('^');
   Direction direction = Direction::UP;
-  while (grid.inbound(current)) {
-    visited.insert(current);
-    Position next = direction.apply(current);
-    while (grid.inbound(next) && grid[next.i][next.j] == '#') {
+  while (grid.inbound(position) && !path.is_cyclic()) {
+    path.append({position, direction});
+    Position next_position = direction.apply(position);
+    while (grid.inbound(next_position) &&
+           grid[next_position.i][next_position.j] == '#') {
       direction = direction.turn_right();
-      next = direction.apply(current);
+      next_position = direction.apply(position);
     }
-    current = next;
+    position = next_position;
   }
-  return visited.size();
+  return path;
+}
+
+unsigned int solve_part_one(std::vector<std::string> const &lines) {
+  Grid grid(lines);
+  return guard_path(grid).unique_positions().size();
 }
 
 unsigned int solve_part_two(std::vector<std::string> const &lines) {
-  return 24;
+  Grid grid(lines);
+  GuardPath path = guard_path(grid);
+  unsigned int res = 0;
+  for (const auto &pos : path.unique_positions()) {
+    if (grid[pos.i][pos.j] == '^')
+      continue;
+    char prev = grid[pos];
+    grid[pos] = '#';
+    GuardPath alternative = guard_path(grid);
+    if (alternative.is_cyclic())
+      res++;
+    grid[pos] = prev;
+  }
+  return res;
 }
 
 #ifdef DOCTEST_CONFIG_DISABLE
@@ -150,4 +213,20 @@ TEST_CASE("Example Part One") {
                "......#...",
            }),
            41);
+}
+
+TEST_CASE("Example Part Two") {
+  CHECK_EQ(solve_part_two({
+               "....#.....",
+               ".........#",
+               "..........",
+               "..#.......",
+               ".......#..",
+               "..........",
+               ".#..^.....",
+               "........#.",
+               "#.........",
+               "......#...",
+           }),
+           6);
 }
