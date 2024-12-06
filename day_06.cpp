@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <set>
+#include <thread>
 
 #include "utils.hpp"
 
@@ -133,6 +134,7 @@ public:
 
   const std::string &operator[](size_t i) const { return grid[i]; }
   char &operator[](Position const &p) { return grid[p.i][p.j]; }
+  Grid clone() { return Grid(grid); }
 
   size_t width() const { return cols; }
 
@@ -166,19 +168,51 @@ unsigned int solve_part_one(std::vector<std::string> const &lines) {
   return guard_path(grid).unique_positions().size();
 }
 
+std::vector<std::vector<Position>> split_workloads(GuardPath const &path,
+                                                   size_t factor) {
+  std::set<Position> all = path.unique_positions();
+  const size_t minimal_workload = 1;
+  const size_t per_workload = std::max(minimal_workload, all.size() / factor);
+  std::vector<Position> current;
+  std::vector<std::vector<Position>> res;
+  for (const auto &pos : all) {
+    current.push_back(pos);
+    if (current.size() == per_workload) {
+      res.push_back(current);
+      current.clear();
+    }
+  }
+  if (!current.empty()) {
+    res.push_back(std::move(current));
+  }
+  return res;
+}
+
 unsigned int solve_part_two(std::vector<std::string> const &lines) {
   Grid grid(lines);
   GuardPath path = guard_path(grid);
-  unsigned int res = 0;
-  for (const auto &pos : path.unique_positions()) {
-    if (grid[pos.i][pos.j] == '^')
-      continue;
-    char prev = grid[pos];
-    grid[pos] = '#';
-    GuardPath alternative = guard_path(grid);
-    if (alternative.is_cyclic())
-      res++;
-    grid[pos] = prev;
+  std::atomic<unsigned int> res = 0;
+  std::vector<std::vector<Position>> workloads = split_workloads(path, 2);
+  std::vector<std::thread> workers;
+  for (const auto &w : workloads) {
+    std::thread t([&w, &grid, &res]() {
+      Grid grid_copy = grid.clone();
+      for (const auto &pos : w) {
+        if (grid_copy[pos.i][pos.j] == '^')
+          continue;
+        char prev = grid_copy[pos];
+        grid_copy[pos] = '#';
+        GuardPath alternative = guard_path(grid_copy);
+        if (alternative.is_cyclic())
+          res++;
+        grid_copy[pos] = prev;
+      }
+    });
+    workers.push_back(std::move(t));
+  }
+
+  for (auto &worker : workers) {
+    worker.join();
   }
   return res;
 }
@@ -229,4 +263,22 @@ TEST_CASE("Example Part Two") {
                "......#...",
            }),
            6);
+}
+
+TEST_CASE("Clone") {
+  Grid a({
+      "....#.....",
+      ".........#",
+      "..........",
+      "..#.......",
+      ".......#..",
+      "..........",
+      ".#..^.....",
+      "........#.",
+      "#.........",
+      "......#...",
+  });
+  Grid b = a.clone();
+  a[{0, 0}] = 'X';
+  CHECK_EQ(b[{0, 0}], '.');
 }
