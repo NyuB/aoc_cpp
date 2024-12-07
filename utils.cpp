@@ -46,12 +46,36 @@ std::vector<unsigned int> ints(std::string line, char delimiter) {
   StringIterator it(line, delimiter);
   std::vector<unsigned int> result;
   while (it.hasNext()) {
-    result.push_back(svtoi(it.next()));
+    result.push_back(std::stoi(std::string(it.next())));
+  }
+  return result;
+}
+
+std::vector<unsigned long> longs(std::string line, char delimiter) {
+
+  StringIterator it(line, delimiter);
+  std::vector<unsigned long> result;
+  while (it.hasNext()) {
+    result.push_back(std::stoul(std::string(it.next())));
   }
   return result;
 }
 
 std::vector<unsigned int> ints(std::string line) { return ints(line, ' '); }
+std::vector<unsigned long> longs(std::string line) { return longs(line, ' '); }
+
+std::vector<unsigned long long> llongs(std::string line, char delimiter) {
+  StringIterator it(line, delimiter);
+  std::vector<unsigned long long> result;
+  while (it.hasNext()) {
+    result.push_back(std::stoull(std::string(it.next())));
+  }
+  return result;
+}
+
+std::vector<unsigned long long> llongs(std::string line) {
+  return llongs(line, ' ');
+}
 
 #include "doctest.h"
 TEST_CASE("Split single char") {

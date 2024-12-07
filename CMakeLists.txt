@@ -38,5 +38,6 @@ day(03 168539636 97529391)
 day(04 2575 2041)
 day(05 4662 5900)
 day(06 5534 2262)
+day(07 12553187650171 96779702119491)
 
 file(DOWNLOAD https://github.com/doctest/doctest/releases/download/v2.4.11/doctest.h doctest/doctest.h EXPECTED_MD5 0b7fbd89a158063beecba78eb8400fad)
