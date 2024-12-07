@@ -41,38 +41,28 @@ unsigned int svtoi(std::string_view const &str) {
   return result;
 }
 
-std::vector<unsigned int> ints(std::string line, char delimiter) {
-
-  StringIterator it(line, delimiter);
-  std::vector<unsigned int> result;
-  while (it.hasNext()) {
-    result.push_back(std::stoi(std::string(it.next())));
-  }
+unsigned int stoui(std::string const &str) {
+  unsigned int result;
+  (void)std::from_chars(str.data(), str.data() + str.size(), result);
   return result;
+}
+
+std::vector<unsigned int> ints(std::string line, char delimiter) {
+  return numbers<unsigned int, stoui>(line, delimiter);
 }
 
 std::vector<unsigned long> longs(std::string line, char delimiter) {
+  return numbers<unsigned long, std::stoul>(line, delimiter);
+}
 
-  StringIterator it(line, delimiter);
-  std::vector<unsigned long> result;
-  while (it.hasNext()) {
-    result.push_back(std::stoul(std::string(it.next())));
-  }
-  return result;
+std::vector<unsigned long long> llongs(std::string line, char delimiter) {
+  return numbers<unsigned long long, std::stoull>(line, delimiter);
 }
 
 std::vector<unsigned int> ints(std::string line) { return ints(line, ' '); }
-std::vector<unsigned long> longs(std::string line) { return longs(line, ' '); }
-
-std::vector<unsigned long long> llongs(std::string line, char delimiter) {
-  StringIterator it(line, delimiter);
-  std::vector<unsigned long long> result;
-  while (it.hasNext()) {
-    result.push_back(std::stoull(std::string(it.next())));
-  }
-  return result;
+std::vector<unsigned long> longs(std::string const &line) {
+  return longs(line, ' ');
 }
-
 std::vector<unsigned long long> llongs(std::string line) {
   return llongs(line, ' ');
 }

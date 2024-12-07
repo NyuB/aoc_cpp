@@ -8,7 +8,7 @@ std::vector<std::string> read_input_file(std::string const &filename);
 std::vector<unsigned int> ints(std::string line, char delimiter);
 std::vector<unsigned int> ints(std::string line);
 std::vector<unsigned long> longs(std::string line, char delimiter);
-std::vector<unsigned long> longs(std::string line);
+std::vector<unsigned long> longs(std::string const &line);
 std::vector<unsigned long long> llongs(std::string line, char delimiter);
 std::vector<unsigned long long> llongs(std::string line);
 
@@ -27,5 +27,26 @@ private:
   size_t _begin;
   size_t _end;
 };
+
+template <typename Number,
+          Number (*From_String)(const std::string &, size_t *, int)>
+std::vector<Number> numbers(std::string const &line, char delimiter) {
+  StringIterator it(line, delimiter);
+  std::vector<Number> result;
+  while (it.hasNext()) {
+    result.push_back(From_String(std::string(it.next()), nullptr, 10));
+  }
+  return result;
+}
+
+template <typename Number, Number (*From_String)(const std::string &)>
+std::vector<Number> numbers(std::string const &line, char delimiter) {
+  StringIterator it(line, delimiter);
+  std::vector<Number> result;
+  while (it.hasNext()) {
+    result.push_back(From_String(std::string(it.next())));
+  }
+  return result;
+}
 
 #endif // UTILS_HPP
