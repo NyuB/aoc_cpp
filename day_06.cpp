@@ -146,15 +146,56 @@ private:
   size_t cols;
 };
 
-GuardPath guard_path(Grid const &grid) {
+class GridView {
+public:
+  virtual bool blocked(Position const &p) const = 0;
+  virtual bool inbound(Position const &p) const = 0;
+  virtual Position start() const = 0;
+  virtual ~GridView() {};
+};
+
+class SimpleGrid : public GridView {
+public:
+  SimpleGrid(Grid const &grid_) : grid(grid_) {}
+  virtual bool blocked(Position const &p) const override {
+    return grid[p.i][p.j] == '#';
+  };
+  virtual bool inbound(Position const &p) const override {
+    return grid.inbound(p);
+  }
+  virtual Position start() const override { return grid.find('^'); }
+  ~SimpleGrid() {};
+
+private:
+  Grid const &grid;
+};
+
+class BlockedGrid : public GridView {
+public:
+  BlockedGrid(GridView const &grid_, Position const &blocked_position_)
+      : grid(grid_), blocked_position(blocked_position_) {}
+  virtual bool blocked(Position const &p) const override {
+    return p == blocked_position || grid.blocked(p);
+  };
+  virtual bool inbound(Position const &p) const override {
+    return grid.inbound(p);
+  }
+  virtual Position start() const override { return grid.start(); }
+  ~BlockedGrid() {};
+
+private:
+  GridView const &grid;
+  Position const &blocked_position;
+};
+
+GuardPath guard_path(GridView const &grid) {
   GuardPath path;
-  Position position = grid.find('^');
+  Position position = grid.start();
   Direction direction = Direction::UP;
   while (grid.inbound(position) && !path.is_cyclic()) {
     path.append({position, direction});
     Position next_position = direction.apply(position);
-    while (grid.inbound(next_position) &&
-           grid[next_position.i][next_position.j] == '#') {
+    while (grid.inbound(next_position) && grid.blocked(next_position)) {
       direction = direction.turn_right();
       next_position = direction.apply(position);
     }
@@ -165,7 +206,7 @@ GuardPath guard_path(Grid const &grid) {
 
 unsigned int solve_part_one(std::vector<std::string> const &lines) {
   Grid grid(lines);
-  return guard_path(grid).unique_positions().size();
+  return guard_path(SimpleGrid(grid)).unique_positions().size();
 }
 
 std::vector<std::vector<Position>> split_workloads(GuardPath const &path,
@@ -189,23 +230,20 @@ std::vector<std::vector<Position>> split_workloads(GuardPath const &path,
 }
 
 unsigned int solve_part_two(std::vector<std::string> const &lines) {
-  Grid grid(lines);
-  GuardPath path = guard_path(grid);
+  const Grid grid(lines);
+  const SimpleGrid base_view = SimpleGrid(grid);
+  const GuardPath path = guard_path(SimpleGrid(grid));
   std::atomic<unsigned int> res = 0;
   std::vector<std::vector<Position>> workloads = split_workloads(path, 2);
   std::vector<std::thread> workers;
   for (const auto &w : workloads) {
-    std::thread t([&w, &grid, &res]() {
-      Grid grid_copy = grid.clone();
+    std::thread t([&w, &grid, &res, &base_view]() {
       for (const auto &pos : w) {
-        if (grid_copy[pos.i][pos.j] == '^')
+        if (base_view.start() == pos)
           continue;
-        char prev = grid_copy[pos];
-        grid_copy[pos] = '#';
-        GuardPath alternative = guard_path(grid_copy);
+        GuardPath alternative = guard_path(BlockedGrid(base_view, pos));
         if (alternative.is_cyclic())
           res++;
-        grid_copy[pos] = prev;
       }
     });
     workers.push_back(std::move(t));
