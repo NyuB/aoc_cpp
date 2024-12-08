@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <map>
+#include <numeric>
 #include <optional>
 #include <set>
 #include <vector>
@@ -15,37 +16,77 @@ struct Position {
   bool operator==(Position const &other) const {
     return i == other.i && j == other.j;
   }
+
   bool operator<(Position const &other) const {
     if (i == other.i)
       return j < other.j;
     return i < other.i;
   }
+
   std::optional<Position> opposite(Position const &other, unsigned int rows,
                                    unsigned int cols) const {
-    if (other.i > i && other.i - i > i)
+    Position res{i - (other.i - i), j - (other.j - j)};
+    if (res.i < 0 || res.i >= rows || res.j < 0 || res.j >= cols)
       return {};
-    if (other.i < i && i - other.i + i >= rows)
-      return {};
-    if (other.j > j && other.j - j > j)
-      return {};
-    if (other.j < j && j - other.j + j >= cols)
-      return {};
-    unsigned int oi;
-    unsigned int oj;
-    if (other.i > i) {
-      oi = i - (other.i - i);
-    } else {
-      oi = (i + (i - other.i));
-    }
-    if (other.j > j) {
-      oj = j - (other.j - j);
-    } else {
-      oj = (j + (j - other.j));
-    }
-    return std::optional(Position{oi, oj});
+    return res;
   }
-  unsigned int i;
-  unsigned int j;
+
+  std::vector<Position> opposites(Position const &other, unsigned int rows,
+                                  unsigned int cols) const {
+    Position delta{i - other.i, j - other.j};
+    int gcd = std::gcd(delta.i, delta.j);
+    delta = {delta.i / gcd, delta.j / gcd};
+    std::vector<Position> res;
+    Position current = other;
+    while (current.i >= 0 && current.i < rows && current.j >= 0 &&
+           current.j < cols) {
+      res.push_back(current);
+      current = {current.i + delta.i, current.j + delta.j};
+    }
+    return res;
+  }
+
+  int i;
+  int j;
+};
+
+class AntinodesModel {
+public:
+  virtual std::set<Position> antinodes(Position const &a, Position const &b,
+                                       unsigned int rows,
+                                       unsigned int cols) const = 0;
+
+private:
+};
+
+class EquidistantAntinodes : public AntinodesModel {
+public:
+  virtual std::set<Position> antinodes(Position const &a, Position const &b,
+                                       unsigned int rows,
+                                       unsigned int cols) const {
+    std::set<Position> res;
+    const auto opposite_a = a.opposite(b, rows, cols);
+    const auto opposite_b = b.opposite(a, rows, cols);
+    if (opposite_a.has_value())
+      res.insert(opposite_a.value());
+    if (opposite_b.has_value())
+      res.insert(opposite_b.value());
+    return res;
+  }
+};
+
+class AlignedAntinodes : public AntinodesModel {
+public:
+  virtual std::set<Position> antinodes(Position const &a, Position const &b,
+                                       unsigned int rows,
+                                       unsigned int cols) const {
+    std::set<Position> res;
+    for (const auto &o : a.opposites(b, rows, cols))
+      res.insert(o);
+    for (const auto &o : b.opposites(a, rows, cols))
+      res.insert(o);
+    return res;
+  }
 };
 
 class Grid {
@@ -60,7 +101,7 @@ public:
     }
   }
 
-  Position end() const { return {(unsigned int)rows_, (unsigned int)cols_}; }
+  Position end() const { return {(int)rows_, (int)cols_}; }
 
   const std::string &operator[](size_t i) const { return grid[i]; }
   char operator[](Position const &p) const { return grid[p.i][p.j]; }
@@ -95,24 +136,20 @@ private:
   std::map<char, std::vector<Position>> antennas;
 };
 
-unsigned int solve_part_one(std::vector<std::string> const &lines) {
+unsigned int solve(std::vector<std::string> const &lines,
+                   AntinodesModel const &model) {
   Grid grid(lines);
   std::set<Position> antinodes;
   AntennaMap antennaMap;
-  for (unsigned int i = 0; i < grid.rows(); i++) {
-    for (unsigned int j = 0; j < grid.cols(); j++) {
+  for (int i = 0; i < grid.rows(); i++) {
+    for (int j = 0; j < grid.cols(); j++) {
       const Position position{i, j};
       const char symbol = grid[position];
       if (symbol != '.') {
         for (const auto &other : antennaMap[symbol]) {
-          const auto opposite_a =
-              position.opposite(other, grid.rows(), grid.cols());
-          const auto opposite_b =
-              other.opposite(position, grid.rows(), grid.cols());
-          if (opposite_a.has_value())
-            antinodes.insert(opposite_a.value());
-          if (opposite_b.has_value())
-            antinodes.insert(opposite_b.value());
+          for (const auto &antinode :
+               model.antinodes(position, other, grid.rows(), grid.cols()))
+            antinodes.insert(antinode);
         }
         antennaMap.add(symbol, position);
       }
@@ -121,8 +158,12 @@ unsigned int solve_part_one(std::vector<std::string> const &lines) {
   return antinodes.size();
 }
 
+unsigned int solve_part_one(std::vector<std::string> const &lines) {
+  return solve(lines, EquidistantAntinodes());
+}
+
 unsigned int solve_part_two(std::vector<std::string> const &lines) {
-  return 24;
+  return solve(lines, AlignedAntinodes());
 }
 
 #ifdef DOCTEST_CONFIG_DISABLE
@@ -158,6 +199,25 @@ TEST_CASE("Example Part One") {
            }),
            14);
 }
+
+TEST_CASE("Example Part Two") {
+  CHECK_EQ(solve_part_two({
+               "............",
+               "........0...",
+               ".....0......",
+               ".......0....",
+               "....0.......",
+               "......A.....",
+               "............",
+               "............",
+               "........A...",
+               ".........A..",
+               "............",
+               "............",
+           }),
+           34);
+}
+
 TEST_CASE("Vertical opposites") {
   Position a{5, 0};
   Position b{10, 0};
