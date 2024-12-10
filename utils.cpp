@@ -30,8 +30,11 @@ std::vector<std::string> read_input_file(std::string const &filename) {
   while (getline(file, line)) {
     result.push_back(line);
   }
-
   file.close();
+
+  // Remove trailing empty lines
+  while (!result.empty() && result[result.size() - 1].empty())
+    result.pop_back();
   return result;
 }
 

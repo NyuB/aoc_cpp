@@ -1,4 +1,7 @@
 #! python3
+import sys
+import os
+
 template = """
 #ifndef DOCTEST_CONFIG_DISABLE
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
@@ -34,18 +37,17 @@ TEST_CASE("Example Part One") {
 
 """
 
+def download_daily_input(day: str):
+  with open("aoc_session_token", 'r') as token_file:
+      token=token_file.read()
+  os.system(f'curl --raw --cookie "session={token}" https://adventofcode.com/2024/day/{day}/input -o inputs/day_{day}.txt')
+
 if __name__ == '__main__':
-    import sys
     day = sys.argv[1]
     filename = f"day_{day}.cpp"
     print(f"Generating {filename}")
     with open(filename, 'w') as f:
         f.write(template)
     print(f"Generated {filename}")
-    input_filename = f"inputs/day_{day}.txt" 
-    print("Generating empty input file")
-    with open(input_filename, 'w') as f:
-        f.write('')
-    print(f"Generated {input_filename}")
-    
-
+    print("Downloading input file")
+    download_daily_input(day)

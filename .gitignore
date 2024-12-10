@@ -6,3 +6,5 @@ doctest
 
 # IDE specific
 .vscode
+
+aoc_session_token
