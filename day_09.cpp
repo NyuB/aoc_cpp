@@ -17,6 +17,10 @@ struct Block {
   bool operator==(Block const &other) const {
     return id == other.id && space == other.space && free == other.free;
   }
+  void clear() {
+    free += space;
+    space = 0;
+  }
   unsigned int id;
   unsigned int space;
   unsigned int free;
@@ -108,11 +112,37 @@ std::vector<Block> compact(std::string const &line) {
   return res;
 }
 
+std::vector<Block> compact_two(std::string const &line) {
+  std::vector<Block> memory = Block::parse(line);
+  size_t to_move_index = memory.size() - 1;
+  while (to_move_index > 0) {
+    Block to_move = memory[to_move_index];
+    for (size_t i = 0; i < to_move_index; i++) {
+      Block here = memory[i];
+      if (here.free >= to_move.space) {
+        memory.insert(memory.begin() + i + 1, Block{
+                                                  to_move.id,
+                                                  to_move.space,
+                                                  here.free - to_move.space,
+                                              });
+        memory[i].free = 0;
+        to_move_index++;
+        memory[to_move_index].clear();
+        break;
+      }
+    }
+    to_move_index--;
+  }
+  return memory;
+}
+
 number solve_part_one(std::vector<std::string> const &lines) {
   return checksum(compact(lines[0]));
 }
 
-number solve_part_two(std::vector<std::string> const &lines) { return 24; }
+number solve_part_two(std::vector<std::string> const &lines) {
+  return checksum(compact_two(lines[0]));
+}
 
 #ifdef DOCTEST_CONFIG_DISABLE
 int main(int argc, char *argv[]) {
@@ -146,6 +176,10 @@ std::ostream &operator<<(std::ostream &os, std::vector<Block> const &blocks) {
 
 TEST_CASE("Example Part One") {
   CHECK_EQ(solve_part_one({"2333133121414131402"}), 1928);
+}
+
+TEST_CASE("Example Part Two") {
+  CHECK_EQ(solve_part_two({"2333133121414131402"}), 2858);
 }
 
 TEST_CASE("Parse 12345") {
