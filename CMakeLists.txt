@@ -41,5 +41,6 @@ day(06 5534 2262)
 day(07 12553187650171 96779702119491)
 day(08 303 1045)
 day(09 6385338159127 6415163624282)
+day(10 688 1459)
 
 file(DOWNLOAD https://github.com/doctest/doctest/releases/download/v2.4.11/doctest.h doctest/doctest.h EXPECTED_MD5 0b7fbd89a158063beecba78eb8400fad)
