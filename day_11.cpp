@@ -59,18 +59,18 @@ struct StoneKey {
 };
 
 number count_after_n_blinks(number stone, size_t blinks,
-                            std::map<StoneKey, number> &memo) {
+                            std::map<StoneKey, number> *memo) {
   if (blinks == 0)
     return 1;
   StoneKey k{stone, blinks};
-  if (memo.find(k) != memo.end())
-    return memo[k];
+  if (memo->find(k) != memo->end())
+    return memo->at(k);
   std::vector<number> blinked = blink(stone);
   number res = 0;
   for (number s : blinked) {
     res += count_after_n_blinks(s, blinks - 1, memo);
   }
-  memo[k] = res;
+  memo->emplace(k, res);
   return res;
 }
 
@@ -78,7 +78,7 @@ number solve(std::vector<number> stones, unsigned int n) {
   std::map<StoneKey, number> memo;
   number res = 0;
   for (number s : stones) {
-    res += count_after_n_blinks(s, n, memo);
+    res += count_after_n_blinks(s, n, &memo);
   }
   return res;
 }
