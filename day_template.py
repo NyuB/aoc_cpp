@@ -37,16 +37,20 @@ TEST_CASE("Example Part One") {
 
 """
 
-def download_daily_input(day: str):
-  with open("aoc_session_token", 'r') as token_file:
-      token=token_file.read()
-  os.system(f'curl --raw --cookie "session={token}" https://adventofcode.com/2024/day/{day}/input -o inputs/day_{day}.txt')
 
-if __name__ == '__main__':
+def download_daily_input(day: str):
+    with open("aoc_session_token", "r") as token_file:
+        token = token_file.read()
+    os.system(
+        f'curl --raw --cookie "session={token}" https://adventofcode.com/2024/day/{day}/input -o inputs/day_{day}.txt'
+    )
+
+
+if __name__ == "__main__":
     day = sys.argv[1]
     filename = f"day_{day}.cpp"
     print(f"Generating {filename}")
-    with open(filename, 'w') as f:
+    with open(filename, "w") as f:
         f.write(template)
     print(f"Generated {filename}")
     print("Downloading input file")

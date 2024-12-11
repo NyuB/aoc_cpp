@@ -4,6 +4,7 @@ default: fmt test
 
 fmt:
 	clang-format -i *.cpp *.hpp
+	$(PY) -m black *.py
 
 test: test_python test_cpp
 
