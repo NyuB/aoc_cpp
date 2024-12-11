@@ -103,7 +103,7 @@ public:
 
   Position end() const { return {(int)rows_, (int)cols_}; }
 
-  const std::string &operator[](size_t i) const { return grid[i]; }
+  std::string const &operator[](size_t i) const { return grid[i]; }
   char operator[](Position const &p) const { return grid[p.i][p.j]; }
   Grid clone() { return Grid(grid); }
 

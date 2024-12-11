@@ -132,7 +132,7 @@ public:
     return p.i != -1 && p.j != -1 && p.i != height() && p.j != width();
   }
 
-  const std::string &operator[](size_t i) const { return grid[i]; }
+  std::string const &operator[](size_t i) const { return grid[i]; }
   char &operator[](Position const &p) { return grid[p.i][p.j]; }
   Grid clone() { return Grid(grid); }
 

@@ -92,7 +92,7 @@ public:
     return res;
   }
 
-  const std::string &operator[](size_t i) const { return grid[i]; }
+  std::string const &operator[](size_t i) const { return grid[i]; }
 
   size_t width() const { return cols; }
 
