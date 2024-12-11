@@ -1,4 +1,5 @@
 import unittest
+from functools import cache
 
 
 def blink(stone: int) -> list[int]:
@@ -14,27 +15,21 @@ def blink(stone: int) -> list[int]:
         return [stone * 2024]
 
 
-def count_after_n_blinks(
-    stone: int, blinks: int, memo: dict[tuple[int, int], int]
-) -> int:
+@cache
+def count_after_n_blinks(stone: int, blinks: int) -> int:
     if blinks == 0:
         return 1
-    key = (stone, blinks)
-    if key in memo:
-        return memo[key]
     blinked = blink(stone)
     res = 0
     for s in blinked:
-        res += count_after_n_blinks(s, blinks - 1, memo)
-    memo[key] = res
+        res += count_after_n_blinks(s, blinks - 1)
     return res
 
 
 def solve(stones: list[int], blinks: int) -> int:
-    memo = {}
     res = 0
     for s in stones:
-        res += count_after_n_blinks(s, blinks, memo)
+        res += count_after_n_blinks(s, blinks)
     return res
 
 
