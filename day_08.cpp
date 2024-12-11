@@ -26,7 +26,8 @@ struct Position {
   std::optional<Position> opposite(Position const &other, unsigned int rows,
                                    unsigned int cols) const {
     Position res{i - (other.i - i), j - (other.j - j)};
-    if (res.i < 0 || res.i >= rows || res.j < 0 || res.j >= cols)
+    if (res.i < 0 || static_cast<unsigned int>(res.i) >= rows || res.j < 0 ||
+        static_cast<unsigned int>(res.j) >= cols)
       return {};
     return res;
   }
@@ -38,8 +39,8 @@ struct Position {
     delta = {delta.i / gcd, delta.j / gcd};
     std::vector<Position> res;
     Position current = other;
-    while (current.i >= 0 && current.i < rows && current.j >= 0 &&
-           current.j < cols) {
+    while (current.i >= 0 && static_cast<unsigned int>(current.i) < rows &&
+           current.j >= 0 && static_cast<unsigned int>(current.j) < cols) {
       res.push_back(current);
       current = {current.i + delta.i, current.j + delta.j};
     }
@@ -141,9 +142,9 @@ unsigned int solve(std::vector<std::string> const &lines,
   Grid grid(lines);
   std::set<Position> antinodes;
   AntennaMap antennaMap;
-  for (int i = 0; i < grid.rows(); i++) {
-    for (int j = 0; j < grid.cols(); j++) {
-      const Position position{i, j};
+  for (unsigned int i = 0; i < grid.rows(); i++) {
+    for (unsigned int j = 0; j < grid.cols(); j++) {
+      const Position position{static_cast<int>(i), static_cast<int>(j)};
       const char symbol = grid[position];
       if (symbol != '.') {
         for (const auto &other : antennaMap[symbol]) {
@@ -167,7 +168,7 @@ unsigned int solve_part_two(std::vector<std::string> const &lines) {
 }
 
 #ifdef DOCTEST_CONFIG_DISABLE
-int main(int argc, char *argv[]) {
+int main(int _, char *argv[]) {
   std::string filename = argv[2];
   std::string part = argv[1];
   if (part == "1") {

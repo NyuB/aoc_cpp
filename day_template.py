@@ -11,12 +11,12 @@ template = """
 
 #include "utils.hpp"
 
-unsigned int solve_part_one(std::vector<std::string> const &lines) { return 42; }
+unsigned int solve_part_one(std::vector<std::string> const &lines) { (void) lines; return 42; }
 
-unsigned int solve_part_two(std::vector<std::string> const &lines) { return 24; }
+unsigned int solve_part_two(std::vector<std::string> const &lines) { (void) lines; return 24; }
 
 #ifdef DOCTEST_CONFIG_DISABLE
-int main(int argc, char *argv[]) {
+int main(int _, char *argv[]) {
   std::string filename = argv[2];
   std::string part = argv[1];
   if (part == "1") {

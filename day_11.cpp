@@ -94,7 +94,7 @@ number solve_part_two(std::vector<std::string> const &lines) {
 }
 
 #ifdef DOCTEST_CONFIG_DISABLE
-int main(int argc, char *argv[]) {
+int main(int _, char *argv[]) {
   std::string filename = argv[2];
   std::string part = argv[1];
   if (part == "1") {

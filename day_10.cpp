@@ -11,6 +11,9 @@
 #include "utils.hpp"
 
 struct Position {
+  Position(int i_, int j_) : i(i_), j(j_) {}
+  Position(unsigned int i_, unsigned int j_)
+      : i(static_cast<int>(i_)), j(static_cast<int>(j_)) {}
   bool operator==(Position const &other) const {
     return i == other.i && j == other.j;
   }
@@ -36,7 +39,8 @@ public:
     return grid[from.i][from.j] == grid[to.i][to.j] - 1;
   };
   bool inbound(Position const &p) const {
-    return p.i >= 0 && p.j >= 0 && p.i < rows && p.j < cols;
+    return p.i >= 0 && p.j >= 0 && static_cast<size_t>(p.i) < rows &&
+           static_cast<size_t>(p.j) < cols;
   }
   size_t height() const { return rows; }
   size_t width() const { return cols; }
@@ -100,8 +104,8 @@ unsigned int reachable(char target, Grid const &grid, Position const &from,
 unsigned int solve_part_one(std::vector<std::string> const &lines) {
   Grid grid(lines);
   unsigned int res = 0;
-  for (int i = 0; i < grid.height(); i++) {
-    for (int j = 0; j < grid.width(); j++) {
+  for (unsigned int i = 0; i < grid.height(); i++) {
+    for (unsigned int j = 0; j < grid.width(); j++) {
       Position p{i, j};
       if (grid[p] == '0') {
         res += reachable('9', grid, p);
@@ -114,9 +118,9 @@ unsigned int solve_part_one(std::vector<std::string> const &lines) {
 unsigned int solve_part_two(std::vector<std::string> const &lines) {
   Grid grid(lines);
   unsigned int res = 0;
-  for (int i = 0; i < grid.height(); i++) {
-    for (int j = 0; j < grid.width(); j++) {
-      Position p{i, j};
+  for (unsigned int i = 0; i < grid.height(); i++) {
+    for (unsigned int j = 0; j < grid.width(); j++) {
+      Position p(i, j);
       if (grid[p] == '0') {
         res += reachable('9', grid, p, std::set<Position>{p});
       }
@@ -126,7 +130,7 @@ unsigned int solve_part_two(std::vector<std::string> const &lines) {
 }
 
 #ifdef DOCTEST_CONFIG_DISABLE
-int main(int argc, char *argv[]) {
+int main(int _, char *argv[]) {
   std::string filename = argv[2];
   std::string part = argv[1];
   if (part == "1") {

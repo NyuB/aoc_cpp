@@ -4,8 +4,11 @@
 #endif
 
 #include <iostream>
+#include <limits>
 
 #include "utils.hpp"
+
+constexpr size_t out_of_bound = std::numeric_limits<size_t>::max();
 
 class Grid {
 public:
@@ -24,7 +27,7 @@ public:
     const size_t pattern_size = pattern.size();
 
     std::string left = "";
-    for (size_t h = j; h != -1 && j - h < pattern_size; h--) {
+    for (size_t h = j; h != out_of_bound && j - h < pattern_size; h--) {
       left.push_back(grid[i][h]);
     }
     if (left == pattern)
@@ -38,7 +41,7 @@ public:
       res++;
 
     std::string up = "";
-    for (size_t v = i; v != -1 && i - v < pattern_size; v--) {
+    for (size_t v = i; v != out_of_bound && i - v < pattern_size; v--) {
       up.push_back(grid[v][j]);
     }
     if (up == pattern)
@@ -64,7 +67,7 @@ public:
     for (size_t step = 0; step < pattern_size; step++) {
       long r = i - step;
       long c = j + step;
-      if (r >= 0 && c < cols)
+      if (r >= 0 && (static_cast<size_t>(c)) < cols)
         diagonal_up_right.push_back(grid[r][c]);
     }
     if (diagonal_up_right == pattern)
@@ -74,7 +77,7 @@ public:
     for (size_t step = 0; step < pattern_size; step++) {
       long r = i + step;
       long c = j - step;
-      if (r < rows && c >= 0)
+      if ((static_cast<size_t>(r)) < rows && c >= 0)
         diagonal_down_left.push_back(grid[r][c]);
     }
     if (diagonal_down_left == pattern)
@@ -82,8 +85,8 @@ public:
 
     std::string diagonal_down_right = "";
     for (size_t step = 0; step < pattern_size; step++) {
-      long r = i + step;
-      long c = j + step;
+      unsigned long r = i + step;
+      unsigned long c = j + step;
       if (r < rows && c < cols)
         diagonal_down_right.push_back(grid[r][c]);
     }
@@ -136,7 +139,7 @@ unsigned int solve_part_two(std::vector<std::string> const &lines) {
 }
 
 #ifdef DOCTEST_CONFIG_DISABLE
-int main(int argc, char *argv[]) {
+int main(int _, char *argv[]) {
   std::string filename = argv[2];
   std::string part = argv[1];
   if (part == "1") {

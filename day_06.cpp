@@ -4,10 +4,13 @@
 #endif
 
 #include <iostream>
+#include <limits>
 #include <set>
 #include <thread>
 
 #include "utils.hpp"
+
+constexpr unsigned int out_of_bound = std::numeric_limits<unsigned int>::max();
 
 struct Position {
   unsigned int i;
@@ -129,7 +132,8 @@ public:
   }
 
   bool inbound(Position const &p) const {
-    return p.i != -1 && p.j != -1 && p.i != height() && p.j != width();
+    return p.i != out_of_bound && p.j != out_of_bound && p.i != height() &&
+           p.j != width();
   }
 
   std::string const &operator[](size_t i) const { return grid[i]; }
@@ -237,7 +241,7 @@ unsigned int solve_part_two(std::vector<std::string> const &lines) {
   std::vector<std::vector<Position>> workloads = split_workloads(path, 2);
   std::vector<std::thread> workers;
   for (const auto &w : workloads) {
-    std::thread t([&w, &grid, &res, &base_view]() {
+    std::thread t([&w, &res, &base_view]() {
       for (const auto &pos : w) {
         if (base_view.start() == pos)
           continue;
@@ -256,7 +260,7 @@ unsigned int solve_part_two(std::vector<std::string> const &lines) {
 }
 
 #ifdef DOCTEST_CONFIG_DISABLE
-int main(int argc, char *argv[]) {
+int main(int _, char *argv[]) {
   std::string filename = argv[2];
   std::string part = argv[1];
   if (part == "1") {
