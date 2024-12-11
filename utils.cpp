@@ -85,3 +85,19 @@ TEST_CASE("ints") {
   CHECK_EQ(ints("1 2 3 4"), std::vector<unsigned int>{1, 2, 3, 4});
   CHECK_EQ(ints("1|2|3|4", '|'), std::vector<unsigned int>{1, 2, 3, 4});
 }
+
+TEST_CASE("in_grid_bounds") {
+  int negative = -1;
+  int zero = 0;
+  int in = 2;
+  int out = 6;
+  int just_out = 5;
+  size_t bound = 5;
+
+  CHECK(in_grid_bound(zero, bound));
+  CHECK(in_grid_bound(in, bound));
+
+  CHECK_FALSE(in_grid_bound(just_out, bound));
+  CHECK_FALSE(in_grid_bound(out, bound));
+  CHECK_FALSE(in_grid_bound(negative, bound));
+}

@@ -39,8 +39,7 @@ struct Position {
     delta = {delta.i / gcd, delta.j / gcd};
     std::vector<Position> res;
     Position current = other;
-    while (current.i >= 0 && static_cast<unsigned int>(current.i) < rows &&
-           current.j >= 0 && static_cast<unsigned int>(current.j) < cols) {
+    while (in_grid_bound(current.i, rows) && in_grid_bound(current.j, cols)) {
       res.push_back(current);
       current = {current.i + delta.i, current.j + delta.j};
     }

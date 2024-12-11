@@ -39,8 +39,7 @@ public:
     return grid[from.i][from.j] == grid[to.i][to.j] - 1;
   };
   bool inbound(Position const &p) const {
-    return p.i >= 0 && p.j >= 0 && static_cast<size_t>(p.i) < rows &&
-           static_cast<size_t>(p.j) < cols;
+    return in_grid_bound(p.i, rows) && in_grid_bound(p.j, cols);
   }
   size_t height() const { return rows; }
   size_t width() const { return cols; }

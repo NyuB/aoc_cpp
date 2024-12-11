@@ -49,4 +49,9 @@ std::vector<Number> numbers(std::string const &line, char delimiter) {
   return result;
 }
 
+template <typename Checked, typename Bound>
+inline bool in_grid_bound(Checked const &checked, Bound const &bound) {
+  return checked >= 0 && static_cast<Bound>(checked) < bound;
+}
+
 #endif // UTILS_HPP
