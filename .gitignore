@@ -7,4 +7,7 @@ doctest
 # IDE specific
 .vscode
 
+# Python cache
+__pycache__
+
 aoc_session_token
