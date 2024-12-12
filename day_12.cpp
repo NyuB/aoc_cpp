@@ -68,23 +68,62 @@ bool start_of_side(Grid const &grid, Position const &here, Position const &side,
   return before_side_same;
 }
 
+/**
+ * @param here is the evaluated position. Must belong to `grid`
+ * @return `true` if `here` is the first (from right to left) cell of a down
+ * side
+ */
 bool start_of_down_side(Grid const &grid, Position const &here) {
   return start_of_side(grid, here, here.down(), here.right(),
                        here.down_right());
 }
 
+/**
+ * @param here is the evaluated position. Must belong to `grid`
+ * @return `true` if `here` is the first (from left to right) cell of an up side
+ */
 bool start_of_up_side(Grid const &grid, Position const &here) {
   return start_of_side(grid, here, here.up(), here.left(), here.up_left());
 }
 
+/**
+ * @param here is the evaluated position. Must belong to `grid`
+ * @return `true` if `here` is the first (from up to down) cell of a right side
+ */
 bool start_of_left_side(Grid const &grid, Position const &here) {
   return start_of_side(grid, here, here.left(), here.down(), here.down_left());
 }
 
+/**
+ * @param here is the evaluated position. Must belong to `grid`
+ * @return `true` if `here` is the first (from down to up) cell of a left side
+ */
 bool start_of_right_side(Grid const &grid, Position const &here) {
   return start_of_side(grid, here, here.right(), here.up(), here.up_right());
 }
 
+/**
+ * @param here is the evaluated position. Must belong to `grid`
+ * @return the count of sides for which `here` is the first cell. For any sane
+ * `grid` topology, this will either be `0` if `here` lies in the middle of
+ * a side, `2` if it is a corner, `3` if it is a 'peak' or `4` if it is a lonely
+ * cell
+ *
+ *   X      => 0
+ * ______
+ *
+ * |X       => 2
+ *  ---
+ *
+ * _   _
+ *  |X|     => 3
+ *   -
+ *
+ *  _
+ * |X|      => 4
+ *  -
+ *
+ */
 unsigned int count_of_started_sides(Grid const &grid, Position const &here) {
   return start_of_left_side(grid, here) + start_of_down_side(grid, here) +
          start_of_up_side(grid, here) + start_of_right_side(grid, here);
