@@ -5,16 +5,23 @@
 
 #include <iostream>
 #include <limits>
+#include <numeric>
 #include <optional>
 #include <regex>
 
 #include "utils.hpp"
 
-using number = unsigned long long;
+using number = long long;
 
 struct Vector {
   static Vector parse_button(std::string const &line);
   static Vector parse_prize(std::string const &line);
+
+  bool can_reach(Vector const &from, Vector const &target) const {
+    number dx = target.x - from.x;
+    number dy = target.y - from.y;
+    return (dx / x == dy / y) && (dx % x == 0) && (dy % y == 0);
+  }
 
   Vector operator*(number factor) const {
     return Vector{x * factor, y * factor};
@@ -23,6 +30,8 @@ struct Vector {
   Vector operator+(Vector const &other) const {
     return Vector{x + other.x, y + other.y};
   }
+
+  Vector operator-() const { return Vector{-x, -y}; }
 
   bool operator==(Vector const &other) const {
     return x == other.x && y == other.y;
@@ -38,9 +47,62 @@ struct Vector {
   number y;
 };
 
+struct Line {
+  Line(Vector const &origin_, Vector const &direction_)
+      : origin(origin_), direction(direction_) {
+    number gcd = std::gcd(direction.x, direction.y);
+    direction.x /= gcd;
+    direction.y /= gcd;
+  }
+  static bool parallel(Line const &la, Line const &lb);
+  static std::optional<Vector> intersection(Line const &a, Line const &b);
+  Vector origin;
+  Vector direction;
+};
+
+bool Line::parallel(Line const &a, Line const &b) {
+  return a.direction == b.direction || a.direction == (-b.direction);
+}
+
+/**
+ * @return the intersection of `la` and `lb` if it has discrete coordinates,
+ * empty otherwise
+ */
+std::optional<Vector> Line::intersection(Line const &la, Line const &lb) {
+  // https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_points_on_each_line
+  Vector vla = (la.origin + la.direction);
+  Vector vlb = (lb.origin + lb.direction);
+
+  number x1 = la.origin.x;
+  number y1 = la.origin.y;
+
+  number x2 = vla.x;
+  number y2 = vla.y;
+
+  number x3 = lb.origin.x;
+  number y3 = lb.origin.y;
+
+  number x4 = vlb.x;
+  number y4 = vlb.y;
+
+  number px_num =
+      (x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4);
+  number py_num =
+      (x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4);
+
+  number det = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+
+  if (px_num % det != 0 || py_num % det != 0)
+    return {};
+  return Vector{px_num / det, py_num / det};
+}
+
 struct Machine {
   static std::vector<Machine>
   parse_machines(std::vector<std::string> const &lines);
+
+  static std::vector<Machine>
+  parse_big_machines(std::vector<std::string> const &lines);
 
   bool operator==(Machine const &other) const {
     return a == other.a && b == other.b && prize == other.prize;
@@ -79,22 +141,40 @@ Machine::parse_machines(std::vector<std::string> const &lines) {
   return result;
 }
 
-number min_cost(Machine const &machine) {
-  std::optional<number> res{};
-  for (number use_a = 0; use_a <= 100; use_a++) {
-    for (number use_b = 0; use_b <= 100; use_b++) {
-      Vector position = (machine.a * use_a) + (machine.b * use_b);
-      number cost = use_a * 3 + use_b;
-      if (position == machine.prize) {
-        if (!res.has_value()) {
-          res = std::optional(cost);
-        } else {
-          res = std::optional(std::min(res.value(), cost));
-        }
-      }
-    }
+std::vector<Machine>
+Machine::parse_big_machines(std::vector<std::string> const &lines) {
+  std::vector<Machine> result;
+  Vector big_offset{10000000000000, 10000000000000};
+  for (unsigned int i = 0; i < lines.size(); i += 4) {
+    result.push_back(Machine{
+        Vector::parse_button(lines[i]),
+        Vector::parse_button(lines[i + 1]),
+        Vector::parse_prize(lines[i + 2]) + big_offset,
+    });
   }
-  return res.value_or(0);
+  return result;
+}
+
+number min_cost(Machine const &machine) {
+  // See the solution as composed of B * the b button vector from the origin to
+  // an inflexion point, then A * the A vector button to the prize Compute the
+  // inflexion point a the intersection of these two lines Then check if this
+  // point exists an can be reached from origin with a discrete number of B, and
+  // if prize can be reached from this point with an integer number of A
+
+  Line b_line{{0, 0}, machine.b};
+  Line a_line{machine.prize, -machine.a};
+  std::optional<Vector> cross = Line::intersection(b_line, a_line);
+  if (!cross.has_value()) {
+    return 0;
+  }
+  if (machine.b.can_reach({0, 0}, cross.value()) &&
+      machine.a.can_reach(cross.value(), machine.prize)) {
+    number na = (machine.prize.x - cross.value().x) / machine.a.x;
+    number nb = (cross.value().x) / machine.b.x;
+    return na * 3 + nb;
+  }
+  return 0;
 }
 
 number solve_part_one(std::vector<std::string> const &lines) {
@@ -107,8 +187,12 @@ number solve_part_one(std::vector<std::string> const &lines) {
 }
 
 number solve_part_two(std::vector<std::string> const &lines) {
-  (void)lines;
-  return 24;
+  std::vector<Machine> machines = Machine::parse_big_machines(lines);
+  number res = 0;
+  for (const auto &machine : machines) {
+    res += min_cost(machine);
+  }
+  return res;
 }
 
 #ifdef DOCTEST_CONFIG_DISABLE
@@ -116,10 +200,10 @@ int main(int _, char *argv[]) {
   std::string filename = argv[2];
   std::string part = argv[1];
   if (part == "1") {
-    unsigned int res = solve_part_one(read_input_file(filename));
+    number res = solve_part_one(read_input_file(filename));
     std::cout << res << std::endl;
   } else if (part == "2") {
-    unsigned int res = solve_part_two(read_input_file(filename));
+    number res = solve_part_two(read_input_file(filename));
     std::cout << res << std::endl;
   }
 }
@@ -129,6 +213,21 @@ int main(int _, char *argv[]) {
 #ifndef DOCTEST_CONFIG_DISABLE
 std::ostream &operator<<(std::ostream &os, Vector const &v) {
   os << "(" << v.x << ", " << v.y << ")";
+  return os;
+}
+
+std::ostream &operator<<(std::ostream &os, std::optional<Vector> const &v) {
+  if (v.has_value()) {
+    os << v.value();
+
+  } else {
+    os << "None";
+  }
+  return os;
+}
+
+std::ostream &operator<<(std::ostream &os, Line const &l) {
+  os << "Origin:" << l.origin << " | Direction: " << l.direction;
   return os;
 }
 
@@ -202,4 +301,20 @@ TEST_CASE("Parse machines") {
                Machine{Vector{17, 86}, Vector{84, 37}, Vector{7870, 6450}},
                Machine{Vector{69, 23}, Vector{27, 71}, Vector{18641, 10279}},
            });
+}
+
+TEST_CASE("Line intersect") {
+  Line la({0, 0}, {1, 4});
+  Line lb({1, 0}, {1, 8});
+  CHECK_EQ(Line::intersection(la, lb), std::optional<Vector>{Vector{2, 8}});
+  CHECK_EQ(Line::intersection(lb, la), std::optional<Vector>{Vector{2, 8}});
+  Line exa{{8400, 5400}, {-94, -34}};
+  Line exb{{0, 0}, {22, 67}};
+  CHECK_EQ(Line::intersection(exa, exb), std::optional<Vector>({880, 2680}));
+}
+
+TEST_CASE("Single machine example") {
+  CHECK_EQ(solve_part_one({"Button A: X+94, Y+34", "Button B: X+22, Y+67",
+                           "Prize: X=8400, Y=5400"}),
+           280);
 }
