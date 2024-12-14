@@ -46,6 +46,23 @@ def download_daily_input(day: str):
     )
 
 
+def insert_cmakelist_line(day: str):
+    res = []
+    with open("CMakeLists.txt", "r") as f:
+        lines = f.read().split("\n")
+        for i, line in enumerate(lines):
+            res.append(line)
+            if (
+                line.startswith("day(")
+                and (f"day({day}" not in line)
+                and line != lines[-1]
+                and lines[i + 1] == ""
+            ):
+                res.append(f"day({day} TODO TODO)")
+    with open("CMakeLists.txt", "w") as f:
+        f.write("\n".join(res))
+
+
 if __name__ == "__main__":
     day = sys.argv[1]
     filename = f"day_{day}.cpp"
@@ -55,3 +72,4 @@ if __name__ == "__main__":
     print(f"Generated {filename}")
     print("Downloading input file")
     download_daily_input(day)
+    insert_cmakelist_line(day)
