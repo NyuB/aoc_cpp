@@ -31,10 +31,18 @@ int main(int _, char *argv[]) {
 
 #include "doctest/doctest.h"
 
+#ifndef DOCTEST_CONFIG_DISABLE
+// You can add test helpers such as doctest ostream << overrides here
+#endif
+
 TEST_CASE("Example Part One") {
   CHECK_EQ(solve_part_one({}), 0);
 }
 
+TEST_CASE("Example Part Two") {
+  unsigned int REPLACE_WHEN_STARTING_PART_TWO = 24;
+  CHECK_EQ(solve_part_two({}), REPLACE_WHEN_STARTING_PART_TWO);
+}
 """
 
 
