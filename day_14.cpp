@@ -124,12 +124,7 @@ public:
     }
     return true;
   }
-  void print() const {
-    std::cout << "Problem" << std::endl;
-    for (const auto &robot : robots) {
-      std::cout << "\t" << robot << std::endl;
-    }
-  }
+
   unsigned int score() const {
     unsigned int up_left = 0;
     unsigned int up_right = 0;
@@ -153,10 +148,20 @@ public:
     return up_left * up_right * down_left * down_right;
   }
 
+  std::vector<std::string> repr() const {
+    std::vector<std::string> lines;
+    for (size_t i = 0; i < height; i++) {
+      lines.push_back(std::string(width, '.'));
+    }
+    for (const auto &robot : robots) {
+      lines[robot.p.y][robot.p.x] = 'R';
+    }
+    return lines;
+  }
+
   friend std::ostream &operator<<(std::ostream &os, Problem const &problem) {
-    os << "Problem" << std::endl;
-    for (const auto &robot : problem.robots) {
-      os << "\t" << robot << std::endl;
+    for (const auto &line : problem.repr()) {
+      os << line << std::endl;
     }
     return os;
   }
@@ -175,9 +180,37 @@ unsigned int solve_part_one(std::vector<std::string> const &lines,
   return problem.score();
 }
 
-unsigned int solve_part_two(std::vector<std::string> const &lines) {
-  (void)lines;
-  return 24;
+bool robot_at(std::vector<std::string> const &lines, unsigned int x,
+              unsigned int y) {
+  return lines[y][x] == 'R';
+}
+
+bool tree_like_pattern(std::vector<std::string> const &lines) {
+  unsigned int width = lines[0].size();
+  unsigned int height = lines.size();
+  for (unsigned int x = 3; x < width - 3; x++) {
+    for (unsigned int y = 0; y < height - 3; y++) {
+      if (robot_at(lines, x, y) && robot_at(lines, x - 1, y + 1) &&
+          robot_at(lines, x + 1, y + 1) && robot_at(lines, x - 2, y + 2) &&
+          robot_at(lines, x + 2, y + 2) && robot_at(lines, x - 3, y + 3) &&
+          robot_at(lines, x + 3, y + 3)
+
+      )
+        return true;
+    }
+  }
+  return false;
+}
+
+unsigned int solve_part_two(std::vector<std::string> const &lines,
+                            unsigned int width, unsigned int height) {
+  Problem problem(Robot::parse(lines), width, height);
+  unsigned int res = 0;
+  while (!tree_like_pattern(problem.repr())) {
+    problem.move(1);
+    res++;
+  }
+  return res;
 }
 
 #ifdef DOCTEST_CONFIG_DISABLE
@@ -188,7 +221,7 @@ int main(int _, char *argv[]) {
     unsigned int res = solve_part_one(read_input_file(filename), 101, 103, 100);
     std::cout << res << std::endl;
   } else if (part == "2") {
-    unsigned int res = solve_part_two(read_input_file(filename));
+    unsigned int res = solve_part_two(read_input_file(filename), 101, 103);
     std::cout << res << std::endl;
   }
 }
