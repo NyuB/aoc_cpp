@@ -4,6 +4,8 @@
 
 #include <algorithm>
 #include <iostream>
+#include <numeric>
+#include <ranges>
 #include <string>
 #include <vector>
 
@@ -23,36 +25,40 @@ struct Problem {
   size_t size() { return lefts.size(); }
 
   void sort() {
-    std::sort(lefts.begin(), lefts.end());
-    std::sort(rights.begin(), rights.end());
+    std::ranges::sort(this->lefts);
+    std::ranges::sort(this->rights);
   }
 
   std::vector<unsigned int> lefts;
   std::vector<unsigned int> rights;
 };
 
+inline unsigned int diff(unsigned int l, unsigned int r) {
+  unsigned int high = std::max(l, r);
+  unsigned int low = std::min(l, r);
+  return high - low;
+};
+
+inline unsigned int add(unsigned int l, unsigned int r) { return l + r; }
+inline unsigned int mul(unsigned int l, unsigned int r) { return l * r; }
+
 unsigned int solve_part_one(std::vector<std::string> const &lines) {
   Problem problem(lines);
   problem.sort();
-  unsigned int res = 0;
-  for (size_t i = 0; i < problem.size(); i++) {
-    unsigned int high = std::max(problem.lefts[i], problem.rights[i]);
-    unsigned int low = std::min(problem.lefts[i], problem.rights[i]);
-    res += high - low;
-  }
-  return res;
+  const auto diffs =
+      std::ranges::zip_transform_view(diff, problem.lefts, problem.rights);
+  return std::accumulate(diffs.begin(), diffs.end(), 0, add);
 }
 
 unsigned int solve_part_two(std::vector<std::string> const &lines) {
   Problem problem(lines);
-  unsigned int res = 0;
-  for (size_t i = 0; i < problem.size(); i++) {
-    unsigned int left = problem.lefts[i];
-    unsigned int count =
-        std::count(problem.rights.begin(), problem.rights.end(), left);
-    res += left * count;
-  }
-  return res;
+  const auto counts =
+      problem.lefts | std::views::transform([&problem](unsigned int left) {
+        return std::ranges::count(problem.rights, left);
+      });
+  const auto scores =
+      std::ranges::zip_transform_view(mul, problem.lefts, counts);
+  return std::accumulate(scores.begin(), scores.end(), 0, add);
 }
 
 #ifdef DOCTEST_CONFIG_DISABLE
