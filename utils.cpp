@@ -87,12 +87,12 @@ TEST_CASE("ints") {
 }
 
 TEST_CASE("in_grid_bounds") {
-  int negative = -1;
-  int zero = 0;
-  int in = 2;
-  int out = 6;
-  int just_out = 5;
-  size_t bound = 5;
+  [[maybe_unused]] int negative = -1;
+  [[maybe_unused]] int zero = 0;
+  [[maybe_unused]] int in = 2;
+  [[maybe_unused]] int out = 6;
+  [[maybe_unused]] int just_out = 5;
+  [[maybe_unused]] size_t bound = 5;
 
   CHECK(in_grid_bound(zero, bound));
   CHECK(in_grid_bound(in, bound));

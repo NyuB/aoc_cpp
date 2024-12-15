@@ -219,27 +219,27 @@ TEST_CASE("Example Part Two") {
 }
 
 TEST_CASE("Vertical opposites") {
-  Position a{5, 0};
-  Position b{10, 0};
+  [[maybe_unused]] Position a{5, 0};
+  [[maybe_unused]] Position b{10, 0};
   CHECK_EQ(a.opposite(b, 500, 500), std::optional(Position{0, 0}));
   CHECK_EQ(b.opposite(a, 500, 500), std::optional(Position{15, 0}));
 }
 
 TEST_CASE("Horizontal opposites") {
-  Position a{0, 5};
-  Position b{0, 10};
+  [[maybe_unused]] Position a{0, 5};
+  [[maybe_unused]] Position b{0, 10};
   CHECK_EQ(a.opposite(b, 500, 500), std::optional(Position{0, 0}));
   CHECK_EQ(b.opposite(a, 500, 500), std::optional(Position{0, 15}));
 }
 
 TEST_CASE("Out of bound opposites") {
-  Position a{0, 5};
-  Position b{0, 6};
+  [[maybe_unused]] Position a{0, 5};
+  [[maybe_unused]] Position b{0, 6};
   CHECK_EQ(a.opposite(b, 500, 7), std::optional(Position{0, 4}));
   CHECK_EQ(b.opposite(a, 500, 7), std::optional<Position>({}));
 
-  Position c{0, 0};
-  Position d{2, 0};
+  [[maybe_unused]] Position c{0, 0};
+  [[maybe_unused]] Position d{2, 0};
   CHECK_EQ(c.opposite(d, 500, 500), std::optional<Position>({}));
   CHECK_EQ(d.opposite(c, 500, 500), std::optional(Position{4, 0}));
 }
