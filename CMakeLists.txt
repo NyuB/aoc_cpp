@@ -3,7 +3,7 @@ project(AOC_2024 LANGUAGES CXX)
 enable_testing()
 # specify the C++ standard
 add_library(compiler_flags INTERFACE)
-target_compile_features(compiler_flags INTERFACE cxx_std_17)
+target_compile_features(compiler_flags INTERFACE cxx_std_23)
 set(gcc_like_cxx "$<COMPILE_LANG_AND_ID:CXX,ARMClang,AppleClang,Clang,GNU,LCC>")
 set(msvc_cxx "$<COMPILE_LANG_AND_ID:CXX,MSVC>")
 target_compile_options(compiler_flags INTERFACE
