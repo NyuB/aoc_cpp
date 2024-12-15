@@ -30,11 +30,11 @@ std::vector<Block> Block::parse(std::string const &line) {
   std::vector<Block> res;
   unsigned int id = 0;
   for (unsigned int i = 0; i < line.size(); i += 2) {
-    unsigned int space = svtoi(line.substr(i, 1));
+    unsigned int space = svtoui(line.substr(i, 1));
     assert(space > 0);
     unsigned int free = 0;
     if (i + 1 < line.size()) {
-      free = svtoi(line.substr(i + 1, 1));
+      free = svtoui(line.substr(i + 1, 1));
     }
     res.push_back({id, space, free});
     id++;

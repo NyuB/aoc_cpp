@@ -12,7 +12,8 @@ std::vector<unsigned long> longs(std::string const &line);
 std::vector<unsigned long long> llongs(std::string line, char delimiter);
 std::vector<unsigned long long> llongs(std::string line);
 
-unsigned int svtoi(std::string_view const &str);
+unsigned int svtoui(std::string_view const &str);
+unsigned int stoui(std::string const &str);
 
 class StringIterator {
 public:

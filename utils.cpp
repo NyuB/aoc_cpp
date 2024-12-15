@@ -38,7 +38,7 @@ std::vector<std::string> read_input_file(std::string const &filename) {
   return result;
 }
 
-unsigned int svtoi(std::string_view const &str) {
+unsigned int svtoui(std::string_view const &str) {
   unsigned int result;
   (void)std::from_chars(str.data(), str.data() + str.size(), result);
   return result;

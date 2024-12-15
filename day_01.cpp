@@ -15,8 +15,8 @@ struct Problem {
       StringIterator pair(line, ' ');
       auto left = pair.next();
       auto right = pair.next();
-      lefts.push_back(svtoi(left));
-      rights.push_back(svtoi(right));
+      lefts.push_back(svtoui(left));
+      rights.push_back(svtoui(right));
     }
   }
 
