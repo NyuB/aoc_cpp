@@ -81,6 +81,7 @@ public:
   }
   char &operator[](Position const &p) { return grid[p.i][p.j]; }
   char &at(Position const &p) { return grid[p.i][p.j]; }
+  char at_const(Position const &p) const { return grid[p.i][p.j]; }
   bool inbound(Position const &p) const {
     return in_grid_bound(p.i, rows) && in_grid_bound(p.j, cols);
   }
@@ -185,82 +186,93 @@ inline bool is_free(char c) { return c == '.'; }
 inline bool is_wall(char c) { return c == '#'; }
 inline bool is_vertical_move(Position const &m) { return m.j == 0; }
 
-/**
- * try_vertical_box_move(grid, to, m) Attempt to move a box tile vertically by
- * `m`
- * @return `true` if this move is possible, false otherwise
- * @warning this is a destructive operation, `grid` is left in an invalid state
- * when this function returns `false`. `grid` is guaranteed to be in a stable
- * state when this function returns `true`
- */
-bool try_vertical_box_move(Grid *grid, Position const &box, Position const &m);
+bool can_box_vertical_move(Grid const &grid, Position const &box,
+                           Position const &m);
 
-/**
- * try_move(grid, from, m) Attempt to move a tile by `m`
- * @return the position of the tile after moving if this move is possible, empty
- * otherwise
- * @warning this is a destructive operation, `grid` is left in an invalid state
- * when this function returns empty. `grid` is guaranteed to be in a stable
- * state when this function returns a non-empty value.
- */
-std::optional<Position> try_move(Grid *grid, Position const &from,
-                                 Position const &m) {
+bool can_move(Grid const &grid, Position const &from, Position const &m) {
   Position to = from + m;
-  if (!grid->inbound(to))
-    return {};
-  if (is_wall(grid->at(to)))
-    return {};
-  if (is_free(grid->at(to))) {
-    grid->swap(from, to);
-    return std::optional(to);
+  if (!grid.inbound(to) || is_wall(grid.at_const(to)))
+    return false;
+  if (is_free(grid.at_const(to))) {
+    return true;
   }
-  if (is_box(grid->at(to))) {
+  if (is_box(grid.at_const(to))) {
     bool movable;
     if (is_vertical_move(m)) {
-      movable = try_vertical_box_move(grid, to, m);
+      movable = can_box_vertical_move(grid, to, m);
     } else {
-      movable = try_move(grid, to, m).has_value();
+      movable = can_move(grid, to, m);
     }
-    if (movable) {
-      grid->swap(from, to);
-      return std::optional(to);
-    }
+    return movable;
   }
-  return {};
+  return false;
 }
 
-bool try_vertical_box_move(Grid *grid, Position const &box, Position const &m) {
-  if (grid->at(box) == 'O')
-    return try_move(grid, box, m).has_value();
-  else if (grid->at(box) == '[') {
-    std::optional<Position> left = try_move(grid, box, m);
-    std::optional<Position> right = try_move(grid, box + RIGHT, m);
-    return left.has_value() && right.has_value();
-  } else if (grid->at(box) == ']') {
-    std::optional<Position> left = try_move(grid, box + LEFT, m);
-    std::optional<Position> right = try_move(grid, box, m);
-    return left.has_value() && right.has_value();
+bool can_box_vertical_move(Grid const &grid, Position const &box,
+                           Position const &m) {
+  if (grid.at_const(box) == 'O')
+    return can_move(grid, box, m);
+  else if (grid.at_const(box) == '[') {
+    return can_move(grid, box, m) && can_move(grid, box + RIGHT, m);
+  } else if (grid.at_const(box) == ']') {
+    return can_move(grid, box + LEFT, m) && can_move(grid, box, m);
   }
 
   assert(false);
-  return {};
+  return false;
 }
 
-std::optional<Position> move(Grid *grid, Position const &from,
-                             Position const &m) {
-  Grid copy = *grid;
-  std::optional<Position> attempt = try_move(&copy, from, m);
-  if (attempt.has_value()) {
-    // Replace grid with a known-valid updated state
-    *grid = std::move(copy);
+/**
+ * @warning do not call if `can_box_vertical_move` is `false`, since it would
+ * lead `grid` in an inconsistent state. Safe otherwise.
+ */
+void unsafe_box_vertical_move(Grid *grid, Position const &box,
+                              Position const &m);
+
+/**
+ * @warning do not call if `can_move` is `false`, since it would lead `grid` in
+ * an inconsistent state. Safe otherwise.
+ */
+void unsafe_move(Grid *grid, Position const &from, Position const &m) {
+  Position to = from + m;
+  if (is_box(grid->at(to))) {
+    if (is_vertical_move(m)) {
+      unsafe_box_vertical_move(grid, to, m);
+    } else {
+      unsafe_move(grid, to, m);
+    }
   }
-  return attempt;
+  grid->swap(from, to);
+}
+
+void unsafe_box_vertical_move(Grid *grid, Position const &box,
+                              Position const &m) {
+  if (grid->at(box) == 'O')
+    unsafe_move(grid, box, m);
+  else if (grid->at(box) == '[') {
+    unsafe_move(grid, box, m);
+    unsafe_move(grid, box + RIGHT, m);
+  } else if (grid->at(box) == ']') {
+    unsafe_move(grid, box + LEFT, m);
+    unsafe_move(grid, box, m);
+  } else {
+    assert(false);
+  }
+}
+
+Position move(Grid *grid, Position const &from, Position const &m) {
+  if (can_move(*grid, from, m)) {
+    unsafe_move(grid, from, m);
+    return from + m;
+  } else {
+    return from;
+  }
 }
 
 size_t solve(Problem *problem) {
   Position robot = problem->grid.find('@');
   for (Position const &m : problem->moves) {
-    robot = move(&problem->grid, robot, m).value_or(robot);
+    robot = move(&problem->grid, robot, m);
   }
   size_t res = 0;
   for (size_t i = 0; i < problem->grid.height(); i++) {
@@ -358,7 +370,7 @@ TEST_CASE("Grid ops") {
       "#....O...#",
       "##########",
   });
-  try_move(&grid, Position(4, 4), LEFT);
+  unsafe_move(&grid, Position(4, 4), LEFT);
   CHECK_EQ(grid, Grid({
                      "##########",
                      "#..O..O.O#",
@@ -383,7 +395,7 @@ TEST_CASE("Big boxes") {
       "##########",
   });
   CHECK_EQ(grid[Position(4, 4)], '@');
-  try_move(&grid, Position(4, 4), UP);
+  unsafe_move(&grid, Position(4, 4), UP);
   CHECK_EQ(grid, Grid({
                      "##########",
                      "#..[][]..#",
