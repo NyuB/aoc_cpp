@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <map>
 #include <optional>
 #include <queue>
 #include <set>
@@ -123,7 +124,7 @@ public:
     os << std::endl;
     return os;
   }
-  char operator[](Position const &p) const { return grid[p.i][p.j]; }
+  char &operator[](Position const &p) { return grid[p.i][p.j]; }
   bool inbound(Position const &p) const {
     return in_grid_bound(p.i, rows) && in_grid_bound(p.j, cols);
   }
@@ -183,27 +184,111 @@ struct SearchItem {
   bool operator<(SearchItem const &other) const { return cost > other.cost; }
 };
 
+struct SearchItemTracking {
+  Position p;
+  Position orientation;
+  unsigned int cost;
+  std::set<Position> visited;
+  SearchItemTracking next(Edge const &edge) {
+    std::set next_visited = visited;
+    next_visited.insert(edge.destination);
+    return SearchItemTracking{edge.destination, edge.orientation,
+                              edge.cost + cost, std::move(next_visited)};
+  }
+  // Priority queue ordering
+  bool operator<(SearchItemTracking const &other) const {
+    return cost > other.cost;
+  }
+};
+
+struct Vertex {
+  Position p;
+  Position orientation;
+  bool operator<(Vertex const &other) const {
+    if (other.p == p)
+      return orientation < other.orientation;
+    return p < other.p;
+  }
+};
+
+template <typename Item> class AlreadyVisited {
+public:
+  AlreadyVisited(Item const &start) {
+    visited[{start.p, start.orientation}] = start.cost;
+  }
+  void set(Item const &item) {
+    visited[{item.p, item.orientation}] = item.cost;
+  }
+  bool already_seen_better(Item const &item) const {
+    return already_seen_better(Vertex{item.p, item.orientation}, item.cost);
+  }
+
+  bool already_seen_better(Edge const &e, unsigned int cost) const {
+    return already_seen_better(Vertex{e.destination, e.orientation},
+                               e.cost + cost);
+  }
+
+  bool already_seen_better(Vertex const &v, unsigned int cost) const {
+    auto find = visited.find(v);
+    return find != visited.end() && find->second < cost;
+  }
+
+private:
+  std::map<Vertex, unsigned int> visited;
+};
+
 std::optional<unsigned int> shortest_path(Grid const &grid) {
   Position start = grid.find('S');
   Position end = grid.find('E');
   std::priority_queue<SearchItem> q;
-  std::set<Position> visited;
-  q.push(SearchItem{start, EAST, 0});
-  visited.insert(start);
+  SearchItem start_item{start, EAST, 0};
+  q.push(start_item);
+  AlreadyVisited visited(start_item);
   while (!q.empty()) {
     SearchItem item = q.top();
     q.pop();
-    visited.insert(item.p);
+    visited.set(item);
     if (item.p == end)
       return std::optional(item.cost);
     std::vector<Edge> edges = neighbours(grid, item.p, item.orientation);
     for (const auto &edge : edges) {
-      if (visited.find(edge.destination) != visited.end())
+      SearchItem next = item.next(edge);
+      if (visited.already_seen_better(next))
+        continue;
+      q.push(std::move(next));
+    }
+  }
+  return {};
+}
+
+std::set<Position> shortest_positions(Grid const &grid) {
+  Position start = grid.find('S');
+  Position end = grid.find('E');
+
+  std::priority_queue<SearchItemTracking> q;
+  std::set<Position> result{start};
+  std::optional<unsigned int> shortest_distance{};
+
+  SearchItemTracking start_item{start, EAST, 0, {}};
+  q.push(start_item);
+  AlreadyVisited visited(start_item);
+  while (!q.empty()) {
+    SearchItemTracking item = q.top();
+    q.pop();
+    visited.set(item);
+    if (item.p == end && (shortest_distance.value_or(item.cost) == item.cost)) {
+      shortest_distance = std::optional(item.cost);
+      result.insert_range(item.visited);
+    } else if (item.cost > shortest_distance.value_or(item.cost))
+      break;
+    std::vector<Edge> edges = neighbours(grid, item.p, item.orientation);
+    for (const auto &edge : edges) {
+      if (visited.already_seen_better(edge, item.cost))
         continue;
       q.push(item.next(edge));
     }
   }
-  return {};
+  return result;
 }
 
 unsigned int solve_part_one(std::vector<std::string> const &lines) {
@@ -213,8 +298,12 @@ unsigned int solve_part_one(std::vector<std::string> const &lines) {
 }
 
 unsigned int solve_part_two(std::vector<std::string> const &lines) {
-  (void)lines;
-  return 24;
+  Grid grid(lines);
+  auto res = shortest_positions(grid);
+  for (const auto &p : res) {
+    grid[p] = 'O';
+  }
+  return res.size();
 }
 
 #ifdef DOCTEST_CONFIG_DISABLE
@@ -259,4 +348,24 @@ TEST_CASE("Example Part One") {
            7036);
 }
 
-TEST_CASE("Example Part Two") { CHECK_EQ(solve_part_two({}), 24); }
+TEST_CASE("Example Part Two") {
+  CHECK_EQ(solve_part_two({
+               "###############",
+               "#.......#....E#",
+               "#.#.###.#.###.#",
+               "#.....#.#...#.#",
+               "#.###.#####.#.#",
+               "#.#.#.......#.#",
+               "#.#.#####.###.#",
+               "#...........#.#",
+               "###.#.#####.#.#",
+               "#...#.....#.#.#",
+               "#.#.#.###.#.#.#",
+               "#.....#...#.#.#",
+               "#.###.#.#.#.#.#",
+               "#S..#.....#...#",
+               "###############",
+
+           }),
+           45);
+}

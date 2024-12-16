@@ -53,6 +53,6 @@ day(12 1464678 877492)
 day(13 40369 72587986598368)
 day(14 218965032 7037)
 day(15 1479679 1509780)
-day(16 98484 TODO)
+day(16 98484 531)
 
 file(DOWNLOAD https://github.com/doctest/doctest/releases/download/v2.4.11/doctest.h doctest/doctest.h EXPECTED_MD5 0b7fbd89a158063beecba78eb8400fad)
