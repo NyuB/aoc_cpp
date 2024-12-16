@@ -152,16 +152,11 @@ private:
 std::vector<Edge> neighbours(Grid const &grid, Position const &here,
                              Position const &orientation) {
   std::vector<Edge> res;
-  Position clock = here + turn_90_clock(orientation);
-  Position counterclock = here + turn_90_counterclock(orientation);
-  Position back = here + turn_180(orientation);
+  Position clock = turn_90_clock(orientation);
+  Position counterclock = turn_90_counterclock(orientation);
   Position forward = here + orientation;
-  if (grid.free(clock))
-    res.push_back({clock, turn_90_clock(orientation), 1000 + 1});
-  if (grid.free(counterclock))
-    res.push_back({counterclock, turn_90_counterclock(orientation), 1000 + 1});
-  if (grid.free(back))
-    res.push_back({back, turn_180(orientation), 2 * 1000 + 1});
+  res.push_back({here, clock, 1000});
+  res.push_back({here, counterclock, 1000});
   if (grid.free(forward))
     res.push_back({forward, orientation, 1});
   return res;
@@ -184,16 +179,28 @@ struct SearchItem {
   bool operator<(SearchItem const &other) const { return cost > other.cost; }
 };
 
+template <typename T> struct LinkedList {
+  LinkedList(T const &t) : head(t), tail(NULL) {}
+  LinkedList(T const &t, std::shared_ptr<LinkedList<T>> l) : head(t), tail(l) {}
+
+  LinkedList operator+(T const &t) const {
+    std::shared_ptr<LinkedList<T>> preserve =
+        std::make_shared<LinkedList<T>>(head, tail);
+    return LinkedList(t, preserve);
+  }
+
+  T head;
+  std::shared_ptr<LinkedList<T>> tail;
+};
+
 struct SearchItemTracking {
   Position p;
   Position orientation;
   unsigned int cost;
-  std::set<Position> visited;
+  LinkedList<Position> visited{p, NULL};
   SearchItemTracking next(Edge const &edge) {
-    std::set next_visited = visited;
-    next_visited.insert(edge.destination);
     return SearchItemTracking{edge.destination, edge.orientation,
-                              edge.cost + cost, std::move(next_visited)};
+                              edge.cost + cost, visited + edge.destination};
   }
   // Priority queue ordering
   bool operator<(SearchItemTracking const &other) const {
@@ -269,7 +276,7 @@ std::set<Position> shortest_positions(Grid const &grid) {
   std::set<Position> result{start};
   std::optional<unsigned int> shortest_distance{};
 
-  SearchItemTracking start_item{start, EAST, 0, {}};
+  SearchItemTracking start_item{start, EAST, 0, LinkedList(start)};
   q.push(start_item);
   AlreadyVisited visited(start_item);
   while (!q.empty()) {
@@ -278,7 +285,12 @@ std::set<Position> shortest_positions(Grid const &grid) {
     visited.set(item);
     if (item.p == end && (shortest_distance.value_or(item.cost) == item.cost)) {
       shortest_distance = std::optional(item.cost);
-      result.insert_range(item.visited);
+      LinkedList<Position> to_insert = item.visited;
+      result.insert(to_insert.head);
+      while (to_insert.tail != NULL) {
+        to_insert = *to_insert.tail;
+        result.insert(to_insert.head);
+      }
     } else if (item.cost > shortest_distance.value_or(item.cost))
       break;
     std::vector<Edge> edges = neighbours(grid, item.p, item.orientation);
