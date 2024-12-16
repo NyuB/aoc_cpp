@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <iterator> // For std::forward_iterator_tag
 #include <map>
 #include <optional>
 #include <queue>
@@ -182,6 +183,11 @@ struct SearchItem {
 template <typename T> struct LinkedList {
   LinkedList(T const &t) : head(t), tail(NULL) {}
   LinkedList(T const &t, std::shared_ptr<LinkedList<T>> l) : head(t), tail(l) {}
+  LinkedList(LinkedList<T> const &other) : head(other.head), tail(other.tail) {}
+  void operator=(LinkedList<T> const &other) {
+    head = other.head;
+    tail = other.tail;
+  };
 
   LinkedList operator+(T const &t) const {
     std::shared_ptr<LinkedList<T>> preserve =
@@ -191,6 +197,36 @@ template <typename T> struct LinkedList {
 
   T head;
   std::shared_ptr<LinkedList<T>> tail;
+
+  struct Iterator {
+    using iterator_category = std::input_iterator_tag;
+    using value_type = T;
+
+    Iterator &operator++() {
+      current = current->tail;
+      return *this;
+    }
+    Iterator operator++(int) {
+      Iterator tmp{current};
+      operator++();
+      return tmp;
+    }
+    Position operator*() const { return current->head; }
+    Position operator->() const { return current->head; }
+
+    friend bool operator==(const Iterator &a, const Iterator &b) {
+      return a.current == b.current;
+    };
+    friend bool operator!=(const Iterator &a, const Iterator &b) {
+      return a.current != b.current;
+    };
+
+    std::shared_ptr<LinkedList<T>> current;
+  };
+
+  Iterator begin() const { return {std::make_shared<LinkedList<T>>(*this)}; }
+
+  Iterator end() const { return {NULL}; }
 };
 
 struct SearchItemTracking {
@@ -285,11 +321,8 @@ std::set<Position> shortest_positions(Grid const &grid) {
     visited.set(item);
     if (item.p == end && (shortest_distance.value_or(item.cost) == item.cost)) {
       shortest_distance = std::optional(item.cost);
-      LinkedList<Position> to_insert = item.visited;
-      result.insert(to_insert.head);
-      while (to_insert.tail != NULL) {
-        to_insert = *to_insert.tail;
-        result.insert(to_insert.head);
+      for (auto const &position : item.visited) {
+        result.insert(position);
       }
     } else if (item.cost > shortest_distance.value_or(item.cost))
       break;
