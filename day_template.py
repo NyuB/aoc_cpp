@@ -40,7 +40,7 @@ TEST_CASE("Example Part One") {
 }
 
 TEST_CASE("Example Part Two") {
-  unsigned int REPLACE_WHEN_STARTING_PART_TWO = 24;
+  [[maybe_unused]] unsigned int REPLACE_WHEN_STARTING_PART_TWO = 24;
   CHECK_EQ(solve_part_two({}), REPLACE_WHEN_STARTING_PART_TWO);
 }
 """
