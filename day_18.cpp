@@ -47,11 +47,16 @@ struct Position {
 
   int i;
   int j;
+
+  friend std::ostream &operator<<(std::ostream &os, Position const &value) {
+    os << value.i << "," << value.j;
+    return os;
+  }
 };
 
 class Falls {
 public:
-  void record_fall(Position const &p, unsigned int t) { fall_times[p] = t; }
+  static Falls parse(std::vector<std::string> const &lines);
   std::optional<unsigned int> fall_time(Position const &p) const {
     auto find = fall_times.find(p);
     if (find == fall_times.end())
@@ -64,8 +69,20 @@ public:
   }
 
 private:
+  void record_fall(Position const &p, unsigned int t) { fall_times[p] = t; }
   std::map<Position, unsigned int> fall_times;
 };
+
+Falls Falls::parse(std::vector<std::string> const &lines) {
+  Falls falls;
+  unsigned int ft = 1;
+  for (const auto &line : lines) {
+    auto coords = ints(line, ',');
+    falls.record_fall(Position(coords[1], coords[0]), ft);
+    ft++;
+  }
+  return falls;
+}
 
 class Grid {
 public:
@@ -113,19 +130,47 @@ std::optional<unsigned int> solve(Grid const &grid, Falls const &falls,
 unsigned int solve_part_one(std::vector<std::string> const &lines, size_t side,
                             unsigned int time) {
   Grid grid(side, side);
-  Falls falls;
-  unsigned int ft = 1;
-  for (const auto &line : lines) {
-    auto coords = ints(line, ',');
-    falls.record_fall(Position(coords[1], coords[0]), ft);
-    ft++;
-  }
+  Falls falls = Falls::parse(lines);
   return solve(grid, falls, time).value_or(0);
 }
 
-unsigned int solve_part_two(std::vector<std::string> const &lines) {
+class Unsolvable {
+public:
+  bool operator()(unsigned int t) const {
+    return !solve(grid, falls, t).has_value();
+  }
+  Grid const &grid;
+  Falls const &falls;
+};
+
+/**
+ * @warning assumes `p(max)` and `!p(min)`
+ */
+std::optional<unsigned int> bisect(unsigned int min, unsigned int max,
+                                   Unsolvable const &p) {
+  if (min == max) {
+    return max;
+  }
+  if (max == min + 1)
+    return max;
+  unsigned int mid = min + (max - min) / 2;
+  if (p(mid)) {
+    return bisect(min, mid, p);
+  } else {
+    return bisect(mid, max, p);
+  }
+}
+
+std::string solve_part_two(std::vector<std::string> const &lines, size_t side) {
   (void)lines;
-  return 24;
+  (void)side;
+  Grid grid(side, side);
+  Falls falls = Falls::parse(lines);
+  unsigned int tmin = 1;
+  unsigned int tmax = lines.size();
+
+  unsigned int t = bisect(tmin, tmax, Unsolvable{grid, falls}).value_or(0);
+  return lines[t - 1];
 }
 
 #ifdef DOCTEST_CONFIG_DISABLE
@@ -136,8 +181,7 @@ int main(int _, char *argv[]) {
     unsigned int res = solve_part_one(read_input_file(filename), 71, 1024);
     std::cout << res << std::endl;
   } else if (part == "2") {
-    unsigned int res = solve_part_two(read_input_file(filename));
-    std::cout << res << std::endl;
+    std::cout << solve_part_two(read_input_file(filename), 71) << std::endl;
   }
 }
 #endif
@@ -161,6 +205,13 @@ TEST_CASE("Example Part One") {
 }
 
 TEST_CASE("Example Part Two") {
-  [[maybe_unused]] unsigned int REPLACE_WHEN_STARTING_PART_TWO = 24;
-  CHECK_EQ(solve_part_two({}), REPLACE_WHEN_STARTING_PART_TWO);
+  CHECK_EQ(
+      solve_part_two(
+          {
+              "5,4", "4,2", "4,5", "3,0", "2,1", "6,3", "2,4", "1,5", "0,6",
+              "3,3", "2,6", "5,1", "1,2", "5,5", "2,5", "6,5", "1,4", "0,4",
+              "6,4", "1,1", "6,1", "1,0", "0,5", "1,6", "2,0",
+          },
+          7),
+      "6,1");
 }
