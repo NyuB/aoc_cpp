@@ -6,6 +6,7 @@
 #include <cassert>
 #include <iostream>
 #include <numeric>
+#include <optional>
 #include <ranges>
 #include <regex>
 
@@ -201,11 +202,11 @@ number run_once(std::vector<number> const &instructions, number a) {
   return p.out[0];
 }
 
-void expect(bool b, std::string const &msg) {
-  if (!b) {
+void expect(bool expectation_met, std::string const &msg) {
+  if (!expectation_met) {
     printf("[Assertion failed] %s\n", msg.c_str());
   }
-  assert(b);
+  assert(expectation_met);
 }
 
 void assert_one_out_per_loop(std::vector<number> const &instructions) {
@@ -241,26 +242,42 @@ void assert_shifts_a_once_by_3_at_each_loop(
   expect(found, "Should have found one ADV");
 }
 
+/**
+ * Try to build a valid A register by 3 bits blocks, starting from it's lowest 3
+ * bits, thanks to some assumptions ...
+ * @warning assumes A is divided by 8 (i.e. shifted right by 3 bits) at each
+ * iteration
+ * @warning assumes B & C values are erased at each iteration
+ * @warning assumes the instructions are 'looping', i.e. ends with a jnz to
+ * first instruction
+ * @warning assumes the loop jnz is on A
+ * @warning assumes the instructions only output one value per loop
+ */
+std::optional<number> minimal_solution(number current_a,
+                                       std::vector<number> const &instructions,
+                                       size_t n) {
+  if (n == instructions.size())
+    return current_a;
+  number min = (n == 0) ? 1 : 0;
+  for (number a_8 = min; a_8 < 8; a_8++) {
+    number total = (current_a << 3llu) + a_8;
+    if (run_once(instructions, total) ==
+        instructions[instructions.size() - n - 1]) {
+      std::optional<number> attempt =
+          minimal_solution(total, instructions, n + 1);
+      if (attempt.has_value())
+        return attempt;
+    }
+  }
+  return {};
+}
+
 number solve_part_two(std::vector<std::string> const &lines) {
-  number a = 0;
   auto instructions = parse_instructions(lines[4]);
   assert_one_out_per_loop(instructions);
   assert_shifts_a_once_by_3_at_each_loop(instructions);
   assert_ends_with_a_jnz_loop_to_start(instructions);
-  for (size_t i = 0; i < instructions.size(); i++) {
-    bool found = false;
-    for (number a_8 = 0; a_8 < 8; a++) {
-      number total = (a << 3llu) + a_8;
-      if (run_once(instructions, total) ==
-          instructions[instructions.size() - i - 1]) {
-        a = total;
-        found = true;
-        break;
-      }
-    }
-    expect(found, "Should have found a valid 3 bits number");
-  }
-  return a;
+  return minimal_solution(0, instructions, 0).value_or(42);
 }
 
 #ifdef DOCTEST_CONFIG_DISABLE
@@ -294,7 +311,7 @@ TEST_CASE("Example Part One") {
            "4,6,3,5,6,3,5,2,1,0");
 }
 
-TEST_CASE("Example Part Two Bis") {
+TEST_CASE("Example Part Two") {
   CHECK_EQ(solve_part_two({
                "Register A: 2024",
                "Register B: 0",
