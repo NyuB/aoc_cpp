@@ -4,6 +4,7 @@
 #endif
 
 #include <array>
+#include <concepts>
 #include <iostream>
 #include <list>
 #include <map>
@@ -142,24 +143,6 @@ public:
   Grid const &grid;
   Falls const &falls;
 };
-
-/**
- * @warning assumes `p(max)` and `!p(min)`
- */
-std::optional<unsigned int> bisect(unsigned int min, unsigned int max,
-                                   Unsolvable const &p) {
-  if (min == max) {
-    return max;
-  }
-  if (max == min + 1)
-    return max;
-  unsigned int mid = min + (max - min) / 2;
-  if (p(mid)) {
-    return bisect(min, mid, p);
-  } else {
-    return bisect(mid, max, p);
-  }
-}
 
 std::string solve_part_two(std::vector<std::string> const &lines, size_t side) {
   (void)lines;
