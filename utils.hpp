@@ -31,6 +31,41 @@ private:
   size_t _end;
 };
 
+namespace aoc {
+namespace grid {
+struct Position {
+  Position(int i_, int j_) : i(i_), j(j_) {}
+
+  Position(size_t i_, size_t j_)
+      : i(static_cast<int>(i_)), j(static_cast<int>(j_)) {}
+
+  Position(unsigned int i_, unsigned int j_)
+      : i(static_cast<int>(i_)), j(static_cast<int>(j_)) {}
+
+  bool operator==(Position const &other) const;
+
+  bool operator<(Position const &other) const;
+
+  Position operator+(Position const &other) const;
+
+  Position up() const;
+  Position down() const;
+  Position left() const;
+  Position right() const;
+
+  Position up_left() const;
+  Position up_right() const;
+  Position down_left() const;
+  Position down_right() const;
+
+  int i;
+  int j;
+
+  friend std::ostream &operator<<(std::ostream &os, Position const &value);
+};
+} // namespace grid
+} // namespace aoc
+
 template <typename Number,
           Number (*From_String)(const std::string &, size_t *, int)>
 std::vector<Number> numbers(std::string const &line, char delimiter) {

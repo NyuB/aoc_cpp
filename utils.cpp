@@ -70,6 +70,43 @@ std::vector<unsigned long long> llongs(std::string line) {
   return llongs(line, ' ');
 }
 
+namespace aoc {
+namespace grid {
+
+bool Position::operator==(Position const &other) const {
+  return i == other.i && j == other.j;
+}
+
+bool Position::operator<(Position const &other) const {
+  if (i == other.i)
+    return j < other.j;
+  return i < other.i;
+}
+
+Position Position::operator+(Position const &other) const {
+  return Position(i + other.i, j + other.j);
+}
+
+Position Position::up() const { return {i - 1, j}; };
+Position Position::down() const { return {i + 1, j}; };
+Position Position::left() const { return {i, j - 1}; };
+Position Position::right() const { return {i, j + 1}; };
+
+Position Position::up_left() const { return {i - 1, j - 1}; };
+Position Position::up_right() const { return {i - 1, j + 1}; };
+Position Position::down_left() const { return {i + 1, j - 1}; };
+Position Position::down_right() const { return {i + 1, j + 1}; };
+
+int i;
+int j;
+
+std::ostream &operator<<(std::ostream &os, Position const &value) {
+  os << value.i << "," << value.j;
+  return os;
+}
+} // namespace grid
+} // namespace aoc
+
 #include "doctest.h"
 TEST_CASE("Split single char") {
   std::string s = "|Abc|Def|Ghi|";

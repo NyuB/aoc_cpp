@@ -10,22 +10,7 @@
 
 #include "utils.hpp"
 
-struct Position {
-  Position(int i_, int j_) : i(i_), j(j_) {}
-  Position(unsigned int i_, unsigned int j_)
-      : i(static_cast<int>(i_)), j(static_cast<int>(j_)) {}
-  bool operator==(Position const &other) const {
-    return i == other.i && j == other.j;
-  }
-
-  bool operator<(Position const &other) const {
-    if (i == other.i)
-      return j < other.j;
-    return i < other.i;
-  }
-  int i;
-  int j;
-};
+using Position = aoc::grid::Position;
 
 class Grid {
 public:

@@ -12,16 +12,9 @@
 
 #include "utils.hpp"
 
-struct Position {
-  bool operator==(Position const &other) const {
-    return i == other.i && j == other.j;
-  }
+struct Position : public aoc::grid::Position {
 
-  bool operator<(Position const &other) const {
-    if (i == other.i)
-      return j < other.j;
-    return i < other.i;
-  }
+  Position(int i, int j) : aoc::grid::Position(i, j) {}
 
   std::optional<Position> opposite(Position const &other, unsigned int rows,
                                    unsigned int cols) const {
@@ -29,7 +22,7 @@ struct Position {
     if (res.i < 0 || static_cast<unsigned int>(res.i) >= rows || res.j < 0 ||
         static_cast<unsigned int>(res.j) >= cols)
       return {};
-    return res;
+    return std::optional(Position{res});
   }
 
   std::vector<Position> opposites(Position const &other, unsigned int rows,
@@ -45,9 +38,6 @@ struct Position {
     }
     return res;
   }
-
-  int i;
-  int j;
 };
 
 class AntinodesModel {

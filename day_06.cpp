@@ -10,21 +10,7 @@
 
 #include "utils.hpp"
 
-constexpr unsigned int out_of_bound = std::numeric_limits<unsigned int>::max();
-
-struct Position {
-  unsigned int i;
-  unsigned int j;
-
-  bool operator==(Position const &other) const {
-    return i == other.i && j == other.j;
-  }
-  bool operator<(Position const &other) const {
-    if (i == other.i)
-      return j < other.j;
-    return i < other.i;
-  }
-};
+using Position = aoc::grid::Position;
 
 struct Direction {
   static const Direction UP;
@@ -132,8 +118,7 @@ public:
   }
 
   bool inbound(Position const &p) const {
-    return p.i != out_of_bound && p.j != out_of_bound && p.i != height() &&
-           p.j != width();
+    return in_grid_bound(p.i, height()) && in_grid_bound(p.j, width());
   }
 
   std::string const &operator[](size_t i) const { return grid[i]; }
