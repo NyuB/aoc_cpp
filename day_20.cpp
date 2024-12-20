@@ -7,7 +7,6 @@
 #include <iostream>
 #include <map>
 #include <queue>
-#include <set>
 
 #include "utils.hpp"
 
@@ -63,6 +62,18 @@ struct Cheat {
   }
 };
 
+struct Cheats {
+  void insert(Cheat cheat, unsigned int cost) {
+    auto find = cheats.find(cheat);
+    if (find != cheats.end()) {
+      cheats[cheat] = std::min(cost, find->second);
+    } else {
+      cheats[cheat] = cost;
+    }
+  }
+  std::map<Cheat, unsigned int> cheats;
+};
+
 class Grid {
 public:
   Grid(std::vector<std::string> lines) : grid(lines) {
@@ -97,19 +108,16 @@ public:
   bool free(Position const &p) const {
     return inbound(p) && grid[p.i][p.j] != '#';
   }
-  std::vector<Cheat> wall_cheats(Position const &p) const {
-    if (grid[p.i][p.j] != '#')
-      return {};
-    std::array<Position, 4> neighbours{p.up(), p.right(), p.down(), p.left()};
-    std::vector<Cheat> res;
-    for (size_t i = 0; i < neighbours.size(); i++) {
-      for (size_t j = i + 1; j < neighbours.size(); j++) {
-        Position ni = neighbours[i];
-        Position nj = neighbours[j];
-        if (!free(nj) || !free(ni))
+  Cheats cheats_within(Position const &p, int range) const {
+    Cheats res;
+    for (int i = -range; i <= range; i++) {
+      for (int j = -range + std::abs(i); j <= range - std::abs(i); j++) {
+        if (i == 0 && j == 0)
           continue;
-        res.push_back({ni, nj});
-        res.push_back({nj, ni});
+        Position n = {p.i + i, p.j + j};
+        if (!free(n))
+          continue;
+        res.insert({p, n}, std::abs(i) + std::abs(j));
       }
     }
     return res;
@@ -153,8 +161,8 @@ std::vector<BFS> neighbours(Grid const &grid, std::vector<Cheat> const &cheats,
   return res;
 }
 
-std::map<Position, unsigned int> solve(Grid const &grid, Position const &start,
-                                       Position const &end) {
+std::map<Position, unsigned int> bfs(Grid const &grid, Position const &start,
+                                     Position const &end) {
   std::queue<BFS> q;
   std::map<Position, unsigned int> visited{{start, 0}};
   q.push({start, 0});
@@ -164,7 +172,7 @@ std::map<Position, unsigned int> solve(Grid const &grid, Position const &start,
     if (item.p == end)
       return visited;
     for (const auto &n : neighbours(grid, {}, item)) {
-      if (visited.find(n.p) != visited.end())
+      if (visited.contains(n.p))
         continue;
       visited.insert({n.p, n.d});
       q.push(n);
@@ -173,34 +181,36 @@ std::map<Position, unsigned int> solve(Grid const &grid, Position const &start,
   return {};
 }
 
-unsigned int solve_part_one(std::vector<std::string> const &lines,
-                            unsigned int at_least) {
+unsigned int solve(std::vector<std::string> const &lines, unsigned int at_least,
+                   int range) {
   Grid grid(lines);
   Position start = grid.find('S');
   Position end = grid.find('E');
-  std::map<Position, unsigned int> path = solve(grid, start, end);
+  std::map<Position, unsigned int> path = bfs(grid, start, end);
   unsigned int full = path[end];
   unsigned int res = 0;
-  std::set<Cheat> cheats;
-  for (size_t i = 0; i < grid.height(); i++) {
-    for (size_t j = 0; j < grid.width(); j++) {
-      for (const auto &cheat : grid.wall_cheats({i, j})) {
-        if (path.contains(cheat.start) && path.contains(cheat.end) &&
-            path[cheat.start] < path[cheat.end]) {
-          unsigned int with_cheat =
-              full - (path[cheat.end] - path[cheat.start]) + 2;
-          if (with_cheat < full && full - with_cheat >= at_least)
-            res++;
-        }
+  for (const auto &[p, _] : path) {
+    auto cheats = grid.cheats_within(p, range);
+    for (const auto &[cheat, cost] : cheats.cheats) {
+      if (path.contains(cheat.end) && path[cheat.start] < path[cheat.end]) {
+        unsigned int with_cheat =
+            full - (path[cheat.end] - path[cheat.start]) + cost;
+        if (with_cheat < full && full - with_cheat >= at_least)
+          res++;
       }
     }
   }
   return res;
 }
 
-unsigned int solve_part_two(std::vector<std::string> const &lines) {
-  (void)lines;
-  return 24;
+unsigned int solve_part_one(std::vector<std::string> const &lines,
+                            unsigned int at_least) {
+  return solve(lines, at_least, 2);
+}
+
+unsigned int solve_part_two(std::vector<std::string> const &lines,
+                            unsigned int at_least) {
+  return solve(lines, at_least, 20);
 }
 
 #ifdef DOCTEST_CONFIG_DISABLE
@@ -211,7 +221,7 @@ int main(int _, char *argv[]) {
     unsigned int res = solve_part_one(read_input_file(filename), 100);
     std::cout << res << std::endl;
   } else if (part == "2") {
-    unsigned int res = solve_part_two(read_input_file(filename));
+    unsigned int res = solve_part_two(read_input_file(filename), 100);
     std::cout << res << std::endl;
   }
 }
@@ -248,6 +258,42 @@ TEST_CASE("Example Part One") {
 }
 
 TEST_CASE("Example Part Two") {
-  [[maybe_unused]] unsigned int REPLACE_WHEN_STARTING_PART_TWO = 24;
-  CHECK_EQ(solve_part_two({}), REPLACE_WHEN_STARTING_PART_TWO);
+  CHECK_EQ(solve_part_two(
+               {
+
+                   "###############",
+                   "#...#...#.....#",
+                   "#.#.#.#.#.###.#",
+                   "#S#...#.#.#...#",
+                   "#######.#.#.###",
+                   "#######.#.#...#",
+                   "#######.#.###.#",
+                   "###..E#...#...#",
+                   "###.#######.###",
+                   "#...###...#...#",
+                   "#.#####.#.###.#",
+                   "#.#...#.#.#...#",
+                   "#.#.#.#.#.#.###",
+                   "#...#...#...###",
+                   "###############",
+               },
+               50),
+           32 + 31 + 29 + 39 + 25 + 23 + 20 + 19 + 12 + 14 + 12 + 22 + 4 + 3);
 }
+
+/**
+ There are 32 cheats that save 50 picoseconds.
+There are 31 cheats that save 52 picoseconds.
+There are 29 cheats that save 54 picoseconds.
+There are 39 cheats that save 56 picoseconds.
+There are 25 cheats that save 58 picoseconds.
+There are 23 cheats that save 60 picoseconds.
+There are 20 cheats that save 62 picoseconds.
+There are 19 cheats that save 64 picoseconds.
+There are 12 cheats that save 66 picoseconds.
+There are 14 cheats that save 68 picoseconds.
+There are 12 cheats that save 70 picoseconds.
+There are 22 cheats that save 72 picoseconds.
+There are 4 cheats that save 74 picoseconds.
+There are 3 cheats that save 76 picoseconds.
+ */
