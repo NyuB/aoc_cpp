@@ -14,6 +14,12 @@ test_cpp: rebuild
 test_day_%: rebuild day_%.cpp
 	ctest --test-dir build -V -R Day_$*
 
+run_day_%_1: rebuild day_%.cpp
+	build/day_$*.exe 1 inputs/day_$*.txt
+
+run_day_%_2: rebuild day_%.cpp
+	build/day_$*.exe 2 inputs/day_$*.txt
+
 test_%: rebuild %.cpp %.hpp
 	build\$*_test.exe 
 
