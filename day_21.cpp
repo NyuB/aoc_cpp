@@ -253,9 +253,10 @@ make_typing_stacks(unsigned int indirections,
   return res;
 }
 
-unsigned int digit_press_count(Position const &digicodePosition, char c) {
+unsigned int digit_press_count(Position const &digicodePosition, char c,
+                               unsigned int indirections) {
   std::vector<std::shared_ptr<TypingRobot>> stacks =
-      make_typing_stacks(2, digicodePosition);
+      make_typing_stacks(indirections, digicodePosition);
   unsigned int mini = std::numeric_limits<unsigned int>::max();
   for (const auto &myself : stacks) {
     mini = std::min(mini, press_count(myself->enter(c)));
@@ -263,7 +264,8 @@ unsigned int digit_press_count(Position const &digicodePosition, char c) {
   return mini;
 }
 
-unsigned int solve_part_one(std::vector<std::string> const &lines) {
+unsigned int solve(std::vector<std::string> const &lines,
+                   unsigned int indirections) {
   unsigned int res = 0;
 
   for (auto const &line : lines) {
@@ -271,7 +273,7 @@ unsigned int solve_part_one(std::vector<std::string> const &lines) {
     unsigned int presses = 0;
     Position digicodePosition = Position{3, 2};
     for (char c : line) {
-      presses += digit_press_count(digicodePosition, c);
+      presses += digit_press_count(digicodePosition, c, indirections);
       digicodePosition = NUMERIC_KEYPAD[c];
     }
     res += presses * number;
@@ -279,7 +281,12 @@ unsigned int solve_part_one(std::vector<std::string> const &lines) {
   return res;
 }
 
+unsigned int solve_part_one(std::vector<std::string> const &lines) {
+  return solve(lines, 2);
+}
+
 unsigned int solve_part_two(std::vector<std::string> const &lines) {
+  // return solve(lines, 25);
   (void)lines;
   return 24;
 }
