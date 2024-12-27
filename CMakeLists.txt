@@ -58,6 +58,6 @@ day(17 "1,3,5,1,7,2,5,1,6" 236555997372013)
 day(18 454 "8,51")
 day(19 304 705756472327497)
 day(20 1406 1006101)
-day(21 TODO TODO)
+day(21 125742 TODO)
 
 file(DOWNLOAD https://github.com/doctest/doctest/releases/download/v2.4.11/doctest.h doctest/doctest.h EXPECTED_MD5 0b7fbd89a158063beecba78eb8400fad)

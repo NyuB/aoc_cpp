@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <numeric>
 
 #include "utils.hpp"
 
@@ -145,6 +146,7 @@ DirectionalKeypad DIRECTIONAL_KEYPAD{};
 class TypingRobot {
 public:
   virtual std::vector<Press> enter(char c) = 0;
+  virtual std::shared_ptr<TypingRobot> clone() const = 0;
   std::vector<Press> enter(std::string const &s) {
     std::vector<Press> res;
     for (char c : s)
@@ -166,6 +168,9 @@ public:
                              numeric_robot, to, forbidden);
     numeric_robot = to;
     return res;
+  }
+  virtual std::shared_ptr<TypingRobot> clone() const override {
+    return std::make_shared<GuidingRobot>(numeric_robot, vertical_first);
   }
   virtual ~GuidingRobot() {}
 
@@ -197,6 +202,10 @@ public:
     }
     assert(delegate_position == Position(0, 2));
     return res;
+  }
+  virtual std::shared_ptr<TypingRobot> clone() const override {
+    return std::make_shared<DelegatingRobot>(delegate->clone(),
+                                             delegate_position, vertical_first);
   }
   virtual ~DelegatingRobot() {}
 
@@ -233,10 +242,11 @@ make_typing_stacks(unsigned int indirections,
   for (size_t i = 0; i < indirections; i++) {
     std::vector<std::shared_ptr<TypingRobot>> next;
     for (const auto &prev : res) {
-      next.push_back(
-          std::make_shared<DelegatingRobot>(prev, Position{0, 2}, false));
-      next.push_back(
-          std::make_shared<DelegatingRobot>(prev, Position{0, 2}, true));
+
+      next.push_back(std::make_shared<DelegatingRobot>(prev->clone(),
+                                                       Position{0, 2}, false));
+      next.push_back(std::make_shared<DelegatingRobot>(prev->clone(),
+                                                       Position{0, 2}, true));
     }
     res = next;
   }
@@ -244,8 +254,13 @@ make_typing_stacks(unsigned int indirections,
 }
 
 unsigned int digit_press_count(Position const &digicodePosition, char c) {
-  std::shared_ptr<TypingRobot> myself = make_typing_stack(2, digicodePosition);
-  return press_count(myself->enter(c));
+  std::vector<std::shared_ptr<TypingRobot>> stacks =
+      make_typing_stacks(2, digicodePosition);
+  unsigned int mini = std::numeric_limits<unsigned int>::max();
+  for (const auto &myself : stacks) {
+    mini = std::min(mini, press_count(myself->enter(c)));
+  }
+  return mini;
 }
 
 unsigned int solve_part_one(std::vector<std::string> const &lines) {
