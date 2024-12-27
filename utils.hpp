@@ -47,6 +47,7 @@ struct Position {
   bool operator<(Position const &other) const;
 
   Position operator+(Position const &other) const;
+  Position operator-(Position const &other) const;
 
   Position up() const;
   Position down() const;

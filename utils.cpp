@@ -87,6 +87,10 @@ Position Position::operator+(Position const &other) const {
   return Position(i + other.i, j + other.j);
 }
 
+Position Position::operator-(Position const &other) const {
+  return Position(i - other.i, j - other.j);
+}
+
 Position Position::up() const { return {i - 1, j}; };
 Position Position::down() const { return {i + 1, j}; };
 Position Position::left() const { return {i, j - 1}; };

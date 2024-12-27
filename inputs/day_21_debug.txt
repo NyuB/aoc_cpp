@@ -1,0 +1,52 @@
+EXAMPLE
+=========================================================================================
+0239A
+AOC
+<vA<AA>>^AvAA<^A>A | <v<A>>^AvA^A | <vA>^A<v<A>^A>AAvA^A | <v<A>A>^AAAvA<^A>A
+  v <<   A >>  ^ A |    <   A > A |   v  A   <  ^ AA > A |    < v  AAA >  ^ A
+         <       A |        ^   A |      >        ^^   A |         vvv      A
+                 0 |            2 |                    9 |                  A
+
+
+ME
+<vA<AA>>^AvAA<^A>A | v<<A>>^AvA^A | <vA>^Av<<A>^A>AAvA^A | v<<A>A>^AAAvA<^A>A
+  v <<   A >>  ^ A |    <   A > A |   v  A   <  ^ AA > A |    < v  AAA >  ^ A
+         <       A |        ^   A |      >        ^^   A |         vvv      A
+                 0 |            2 |                    9 |                  A
+=========================================================================================
+
+
+INPUT
+=========================================================================================
+279A
+<vA<AA>>^AvA<^A>AvA^A | <vA<AA>>^AvA<^A>AAvA^A | <vA>^AA<A>A | v<<A>A>^AAAvA<^A>A
+  v <<   A >  ^ A > A |   v <<   A >  ^ AA > A |   v  AA ^ A |    < v  AAA >  ^ A
+         <      ^   A |          <      ^^   A |      >>   A |         vvv      A
+                    2 |                      7 |           9 |                  A
+
+=========================================================================================
+
+286A
+
+508A
+<vA<AA>>^AvA<^A>AAvA^A | v<<A>A>^AAvA<^A>A | v<<A>>^AAAvA^A | <vA>^Av<<A>>^AAAvA<^A>A
+  v <<   A >  ^ AA > A |    < v  AA >  ^ A |    <   AAA > A |   v  A   <   AAA >  ^ A
+         <      ^^   A |         vv      A |        ^^^   A |      >       vvv      A
+                     5 |                 0 |              8 |                       A
+
+
+463A
+246A
+
+
+379A
+v<<A>>^AvA^A | v<<A>>^AA<vA<A>>^AAvAA<^A>A | <vA>^AA<A>Av<<A>A>^AAAvA<^A>A
+   <   A > A |    <   AA  v <   AA >>  ^ A |   v  AA ^ A   < v  AAA >  ^ A
+       ^   A |        ^^        <<       A |      >>   A        vvv      A
+           3 |                           7 |           9                 A
+
+
+v<<A>>^AvA^A | <vA<AA>>^AAvA<^A>AAvA^A | <vA>^AA<A>Av<<A>A>^AAAvA<^A>A
+   <   A > A |   v <<   AA >  ^ AA > A |   v  AA ^ A   < v  AAA >  ^ A
+       ^   A |          <<      ^^   A |      >>   A        vvv      A
+           3 |                       7 |           9                 A
