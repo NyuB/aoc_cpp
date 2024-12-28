@@ -4,9 +4,11 @@
 #endif
 
 #include <cassert>
+#include <format>
 #include <functional>
 #include <iostream>
 #include <map>
+#include <optional>
 #include <ranges>
 #include <regex>
 
@@ -150,8 +152,146 @@ number solve_part_one(std::vector<std::string> const &lines) {
   return res;
 }
 
+struct Gate {
+  Gate(std::string const &a, std::string const &b, std::string const &o) {
+    left = std::min(a, b);
+    right = std::max(a, b);
+    op = o;
+  }
+
+  bool operator==(Gate const &other) const {
+    return left == other.left && right == other.right && op == other.op;
+  }
+
+  bool operator<(Gate const &other) const {
+    if (left != other.left)
+      return left < other.left;
+    if (right != other.right)
+      return right < other.right;
+    return op < other.op;
+  }
+
+  std::string left;
+  std::string right;
+  std::string op;
+};
+
+std::string format_bit_index(char prefix, unsigned int bit_index) {
+  return std::format("{}{:0>2}", prefix, bit_index);
+}
+
+struct Problem {
+  using carry_label = std::string;
+
+  void check_bit_output(unsigned int bit_index, carry_label const &carry,
+                        std::string const &add_out) const {
+    Gate output_gate(carry, add_out, "XOR");
+    if (!gates.contains(output_gate)) {
+      printf("Unable to find output xor for bit %u between %s (numbers) and %s (carry)\n",
+             bit_index, add_out.c_str(), carry.c_str());
+    } else {
+      std::string expected = format_bit_index('z', bit_index);
+      std::string out = gates.at(output_gate);
+      if (out != expected) {
+        printf("Output xor for bit %u does not output to %s but to %s\n",
+               bit_index, expected.c_str(), out.c_str());
+      }
+    }
+  }
+
+  std::optional<carry_label>
+  check_full_adder(unsigned int bit_index,
+                   std::optional<carry_label> const &carry) const {
+    std::string left_bit_label = format_bit_index('x', bit_index);
+    std::string right_bit_label = format_bit_index('y', bit_index);
+    Gate xor_gate(left_bit_label, right_bit_label, "XOR");
+    Gate and_gate(left_bit_label, right_bit_label, "AND");
+    if (!gates.contains(xor_gate)) {
+      printf("Unable to find xor gate for bit %u\n", bit_index);
+      return {};
+    }
+    if (!gates.contains(and_gate)) {
+      printf("Unable to find and gate for bit %u\n", bit_index);
+      return {};
+    }
+    if (carry.has_value()) {
+      check_bit_output(bit_index, carry.value(), gates.at(xor_gate));
+      Gate carry_and_gate(carry.value(), gates.at(xor_gate), "AND");
+      if (!gates.contains(carry_and_gate)) {
+        printf("Unable to find carry_and_gate for bit %u between %s (numbers) "
+               "and %s (carry)\n",
+               bit_index, gates.at(xor_gate).c_str(), carry.value().c_str());
+        return {};
+      }
+      Gate carry_or_gate(gates.at(carry_and_gate), gates.at(and_gate), "OR");
+      if (!gates.contains(carry_or_gate)) {
+        printf("Unable to find carry_or_gate for bit %u between %s (numbers "
+               "carry) and %s (carry and)\n",
+               bit_index, gates.at(and_gate).c_str(),
+               gates.at(carry_and_gate).c_str());
+        return {};
+      }
+      return gates.at(carry_or_gate);
+    } else {
+      std::string expected = format_bit_index('z', bit_index);
+      std::string out = gates.at(xor_gate);
+      if (out != expected) {
+        printf("Output xor for bit %u does not output to %s but to %s\n",
+               bit_index, expected.c_str(), out.c_str());
+      }
+      return gates.at(and_gate);
+    }
+    return {};
+  }
+
+  void check() {
+    std::optional<carry_label> carry{};
+    for (unsigned int i = 0; i < bit_count - 1; i++) {
+      carry = check_full_adder(i, carry);
+    }
+  }
+  static Problem parse(std::vector<std::string> const &lines) {
+    bool ignore = true;
+    std::regex r("^(.*) (.*) (.*) -> (.*)$");
+    std::map<Gate, std::string> res;
+    unsigned int bit_count = 0;
+    for (auto const &line : lines) {
+      if (line.empty()) {
+        ignore = false;
+        continue;
+      }
+      if (ignore) {
+        bit_count++;
+        continue;
+      }
+      auto match = *std::sregex_iterator(line.begin(), line.end(), r);
+      std::string left = match[1];
+      std::string op = match[2];
+      std::string right = match[3];
+      std::string label = match[4];
+      res.insert({Gate(left, right, op), label});
+    }
+    return Problem{bit_count / 2, res};
+  }
+
+  friend std::ostream &operator<<(std::ostream &os, Problem const &problem) {
+    os << std::format("Problem [{}]", problem.bit_count) << std::endl;
+    for (auto const &entry : problem.gates) {
+      os << std::format("\t{} {} {} -> {}", entry.first.left, entry.first.op,
+                        entry.first.right, entry.second)
+         << std::endl;
+    }
+    return os;
+  }
+
+  unsigned int bit_count;
+  std::map<Gate, std::string> gates;
+};
+
 unsigned int solve_part_two(std::vector<std::string> const &lines) {
-  (void)lines;
+  Problem problem = Problem::parse(lines);
+  // std::cout << problem << std::endl;
+  problem.check();
   return 24;
 }
 
@@ -245,6 +385,55 @@ TEST_CASE("Example Part One (larger)") {
 }
 
 TEST_CASE("Example Part Two") {
-  [[maybe_unused]] unsigned int REPLACE_WHEN_STARTING_PART_TWO = 24;
-  CHECK_EQ(solve_part_two({}), REPLACE_WHEN_STARTING_PART_TWO);
+  CHECK_EQ(solve_part_two({
+               "x00: 1",
+               "x01: 0",
+               "x02: 1",
+               "x03: 1",
+               "x04: 0",
+               "y00: 1",
+               "y01: 1",
+               "y02: 1",
+               "y03: 1",
+               "y04: 1",
+               "",
+               "ntg XOR fgs -> mjb",
+               "y02 OR x01 -> tnw",
+               "kwq OR kpj -> z05",
+               "x00 OR x03 -> fst",
+               "tgd XOR rvg -> z01",
+               "vdt OR tnw -> bfw",
+               "bfw AND frj -> z10",
+               "ffh OR nrd -> bqk",
+               "y00 AND y03 -> djm",
+               "y03 OR y00 -> psh",
+               "bqk OR frj -> z08",
+               "tnw OR fst -> frj",
+               "gnj AND tgd -> z11",
+               "bfw XOR mjb -> z00",
+               "x03 OR x00 -> vdt",
+               "gnj AND wpb -> z02",
+               "x04 AND y00 -> kjc",
+               "djm OR pbm -> qhw",
+               "nrd AND vdt -> hwm",
+               "kjc AND fst -> rvg",
+               "y04 OR y02 -> fgs",
+               "y01 AND x02 -> pbm",
+               "ntg OR kjc -> kwq",
+               "psh XOR fgs -> tgd",
+               "qhw XOR tgd -> z09",
+               "pbm OR djm -> kpj",
+               "x03 XOR y03 -> ffh",
+               "x00 XOR y04 -> ntg",
+               "bfw OR bqk -> z06",
+               "nrd XOR fgs -> wpb",
+               "frj XOR qhw -> z04",
+               "bqk OR frj -> z07",
+               "y03 OR x01 -> nrd",
+               "hwm AND bqk -> z03",
+               "tgd XOR rvg -> z12",
+               "tnw OR pbm -> gnj",
+
+           }),
+           24);
 }
