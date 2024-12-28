@@ -64,36 +64,60 @@ Lan Lan::parse(std::vector<std::string> const &lines) {
 }
 
 struct SearchItem {
+  SearchItem(SearchItem &&other)
+      : members(std::move(other.members)), next(other.next),
+        total(other.total) {}
+  SearchItem(SearchItem const &other)
+      : members(other.members), next(other.next), total(other.total) {}
+
+  void operator=(SearchItem &&other) {
+    members = std::move(other.members);
+    next = other.next;
+    total = other.total;
+  }
+
+  void operator=(SearchItem const &other) {
+    members = other.members;
+    next = other.next;
+    total = other.total;
+  }
+
+  static SearchItem init(unsigned int total);
+
   std::set<std::string> members;
   unsigned int next;
-  unsigned int all;
+  unsigned int total;
 
   bool operator<(SearchItem const &other) const {
     return max_possible() < other.max_possible();
   }
-  unsigned int max_possible() const { return all - next + members.size(); }
+
+  unsigned int max_possible() const { return total - next + members.size(); }
+
+  void pick_next(std::vector<std::string> const &all, Lan const &lan) {
+    members.insert(all[next]);
+    next++;
+    while (next < all.size() && !lan.is_neighbour_of_each(all[next], members)) {
+      next++;
+    }
+  }
+
+  void skip_next(std::vector<std::string> const &all, Lan const &lan) {
+    unsigned int next_next = next + 1;
+    while (next_next < all.size() &&
+           !lan.is_neighbour_of_each(all[next_next], members)) {
+      next_next++;
+    }
+    next = next_next;
+  }
+
+private:
+  SearchItem(std::set<std::string> m, unsigned int n, unsigned int t)
+      : members(m), next(n), total(t) {}
 };
 
-SearchItem pick_next(SearchItem const &item,
-                     std::vector<std::string> const &all, Lan const &lan) {
-  std::set<std::string> next_members(item.members);
-  next_members.insert(all[item.next]);
-  unsigned int next_next = item.next + 1;
-  while (next_next < all.size() &&
-         !lan.is_neighbour_of_each(all[next_next], next_members)) {
-    next_next++;
-  }
-  return SearchItem{std::move(next_members), next_next, item.all};
-}
-
-SearchItem skip_next(SearchItem const &item,
-                     std::vector<std::string> const &all, Lan const &lan) {
-  unsigned int next_next = item.next + 1;
-  while (next_next < item.all &&
-         !lan.is_neighbour_of_each(all[next_next], item.members)) {
-    next_next++;
-  }
-  return SearchItem{item.members, next_next, item.all};
+SearchItem SearchItem::init(unsigned int total) {
+  return SearchItem({}, 0, total);
 }
 
 std::set<std::string> max_tightly_connected_components(Lan const &lan) {
@@ -102,9 +126,8 @@ std::set<std::string> max_tightly_connected_components(Lan const &lan) {
   std::vector<std::string> members;
   members.append_range(lan.members());
 
-  SearchItem start({}, 0, members.size());
   std::priority_queue<SearchItem> q;
-  q.push(start);
+  q.push(SearchItem::init(members.size()));
   while (!q.empty()) {
     SearchItem item = q.top();
     q.pop();
@@ -112,10 +135,17 @@ std::set<std::string> max_tightly_connected_components(Lan const &lan) {
       return res;
     if (item.members.size() > res.size())
       res = item.members;
-    if (item.next < members.size())
-      q.push(pick_next(item, members, lan));
-    if (item.next < members.size() - 1)
-      q.push(skip_next(item, members, lan));
+
+    if (item.next < members.size()) {
+      SearchItem copy = item;
+      copy.pick_next(members, lan);
+      q.push(std::move(copy));
+    }
+
+    if (item.next < members.size() - 1) {
+      item.skip_next(members, lan);
+      q.push(std::move(item));
+    }
   }
 
   return res;
