@@ -59,6 +59,6 @@ day(18 454 "8,51")
 day(19 304 705756472327497)
 day(20 1406 1006101)
 day(21 125742 TODO)
-day(22 20401393616 TODO)
+day(22 20401393616 2272)
 
 file(DOWNLOAD https://github.com/doctest/doctest/releases/download/v2.4.11/doctest.h doctest/doctest.h EXPECTED_MD5 0b7fbd89a158063beecba78eb8400fad)

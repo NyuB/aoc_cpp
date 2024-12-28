@@ -3,7 +3,10 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #endif
 
+#include <algorithm>
 #include <iostream>
+#include <optional>
+#include <ranges>
 
 #include "utils.hpp"
 
@@ -36,9 +39,97 @@ number solve_part_one(std::vector<std::string> const &lines) {
   return res;
 }
 
+struct Stonk {
+  static std::vector<Stonk> make(number seed);
+  friend std::ostream &operator<<(std::ostream &os, Stonk const &stonk) {
+    os << "{" << stonk.price << ", (" << stonk.change << ")}";
+    return os;
+  }
+  bool operator==(Stonk const &other) const {
+    return price == other.price && change == other.change;
+  }
+
+  number price;
+  number change;
+};
+
+std::vector<Stonk> Stonk::make(number seed) {
+  std::vector<Stonk> res;
+  res.reserve(2000);
+  for (size_t i = 0; i < 2000; i++) {
+    number next_secret = next(seed);
+    res.push_back({next_secret % 10, (next_secret % 10) - (seed % 10)});
+    seed = next_secret;
+  }
+  return res;
+}
+
+bool stonk_changes_equals(Stonk const &stonk, number const &change) {
+  return stonk.change == change;
+}
+
+std::optional<number>
+search_changes_subsequence(std::vector<Stonk> const &stonks,
+                           std::vector<number> const &changes) {
+  auto search = std::search(stonks.begin(), stonks.end(), changes.begin(),
+                            changes.end(), stonk_changes_equals);
+  if (search == stonks.end())
+    return {};
+  return (search + (changes.size() - 1))->price;
+}
+
+number score_for_pattern(std::vector<std::vector<Stonk>> const &merchants,
+                         std::vector<number> const &pattern) {
+  number res = 0;
+  for (const auto &stonks : merchants) {
+    res += search_changes_subsequence(stonks, pattern).value_or(0);
+  }
+  return res;
+}
+
+number sum_range(auto const &r) {
+  number res = 0;
+  for (number n : r)
+    res += n;
+  return res;
+}
+
+bool valid_pattern(std::vector<number> const &pattern) {
+  for (size_t i = 2; i < pattern.size(); i++) {
+    auto sums = std::ranges::slide_view(pattern, i) |
+                std::ranges::views::transform(
+                    [](auto const &r) { return sum_range(r); });
+    if (std::ranges::any_of(sums,
+                            [](number sum) { return sum < -18 || sum > 18; }))
+      return false;
+  }
+  return true;
+}
+
 number solve_part_two(std::vector<std::string> const &lines) {
-  (void)lines;
-  return 24;
+  std::vector<std::vector<Stonk>> merchants;
+  for (const auto &line : lines) {
+    merchants.push_back(Stonk::make(std::stoull(line)));
+  }
+
+  number res = 0;
+  printf("Search start\n");
+  for (number a = -9; a <= 9; a++) {
+    printf("\ta = %lld\n", a);
+    for (number b = -9; b <= 9; b++) {
+      printf("\t\tb = %lld\n", b);
+      for (number c = -9; c <= 9; c++) {
+        for (number d = -9; d <= 9; d++) {
+          std::vector<number> pattern{a, b, c, d};
+          if (!valid_pattern(pattern))
+            continue;
+          res = std::max(res, score_for_pattern(merchants, {a, b, c, d}));
+        }
+      }
+    }
+  }
+
+  return res;
 }
 
 #ifdef DOCTEST_CONFIG_DISABLE
@@ -90,6 +181,24 @@ TEST_CASE("prune") { CHECK_EQ(prune(100000000), 16113920); }
 TEST_CASE("mix") { CHECK_EQ(mix(15, 42), 37); }
 
 TEST_CASE("Example Part Two") {
-  [[maybe_unused]] number REPLACE_WHEN_STARTING_PART_TWO = 24;
-  CHECK_EQ(solve_part_two({}), REPLACE_WHEN_STARTING_PART_TWO);
+  CHECK_EQ(solve_part_two({
+               "1",
+               "2",
+               "3",
+               "2024",
+           }),
+           23);
+}
+
+TEST_CASE("Stonk") {
+  [[maybe_unused]] std::vector<Stonk> stonks = Stonk::make(123);
+  CHECK_EQ(stonks[0], Stonk{0, -3});
+  CHECK_EQ(stonks[1], Stonk{6, 6});
+  CHECK_EQ(stonks[2], Stonk{5, -1});
+}
+
+TEST_CASE("Search change pattern") {
+  [[maybe_unused]] std::vector<Stonk> stonks = Stonk::make(123);
+  [[maybe_unused]] std::vector<number> needle{-1, -1, 0, 2};
+  CHECK_EQ(search_changes_subsequence(stonks, needle), 6);
 }
