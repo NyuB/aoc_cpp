@@ -3,8 +3,10 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #endif
 
+#include <algorithm>
 #include <iostream>
 #include <map>
+#include <queue>
 #include <ranges>
 #include <set>
 
@@ -12,11 +14,7 @@
 
 class Lan {
 public:
-  void link(std::string const &a, std::string const &b) {
-    link_uni(a, b);
-    link_uni(b, a);
-  }
-
+  static Lan parse(std::vector<std::string> const &lines);
   std::set<std::string> const &neighbors(std::string const &from) const {
     return links.find(from)->second;
   }
@@ -31,7 +29,19 @@ public:
     return find != links.end() && find->second.contains(b);
   }
 
+  bool is_neighbour_of_each(std::string const &from, auto const &all) const {
+    for (auto const &each : all) {
+      if (!are_neighbors(from, each))
+        return false;
+    }
+    return true;
+  }
+
 private:
+  void link(std::string const &a, std::string const &b) {
+    link_uni(a, b);
+    link_uni(b, a);
+  }
   void link_uni(std::string const &from, std::string const &to) {
     if (!links.contains(from)) {
       links[from] = {to};
@@ -42,13 +52,7 @@ private:
   std::map<std::string, std::set<std::string>> links;
 };
 
-bool at_least_one_starts_with(char letter, std::string const &a,
-                              std::string const &b, std::string const &c) {
-  return a.starts_with(letter) || b.starts_with(letter) ||
-         c.starts_with(letter);
-}
-
-unsigned int solve_part_one(std::vector<std::string> const &lines) {
+Lan Lan::parse(std::vector<std::string> const &lines) {
   Lan lan;
   for (auto const &line : lines) {
     StringIterator split(line, '-');
@@ -56,6 +60,75 @@ unsigned int solve_part_one(std::vector<std::string> const &lines) {
     std::string b(split.next());
     lan.link(a, b);
   }
+  return lan;
+}
+
+struct SearchItem {
+  std::set<std::string> members;
+  unsigned int next;
+  unsigned int all;
+
+  bool operator<(SearchItem const &other) const {
+    return max_possible() < other.max_possible();
+  }
+  unsigned int max_possible() const { return all - next + members.size(); }
+};
+
+SearchItem pick_next(SearchItem const &item,
+                     std::vector<std::string> const &all, Lan const &lan) {
+  std::set<std::string> next_members(item.members);
+  next_members.insert(all[item.next]);
+  unsigned int next_next = item.next + 1;
+  while (next_next < all.size() &&
+         !lan.is_neighbour_of_each(all[next_next], next_members)) {
+    next_next++;
+  }
+  return SearchItem{std::move(next_members), next_next, item.all};
+}
+
+SearchItem skip_next(SearchItem const &item,
+                     std::vector<std::string> const &all, Lan const &lan) {
+  unsigned int next_next = item.next + 1;
+  while (next_next < item.all &&
+         !lan.is_neighbour_of_each(all[next_next], item.members)) {
+    next_next++;
+  }
+  return SearchItem{item.members, next_next, item.all};
+}
+
+std::set<std::string> max_tightly_connected_components(Lan const &lan) {
+  std::set<std::string> res;
+
+  std::vector<std::string> members;
+  members.append_range(lan.members());
+
+  SearchItem start({}, 0, members.size());
+  std::priority_queue<SearchItem> q;
+  q.push(start);
+  while (!q.empty()) {
+    SearchItem item = q.top();
+    q.pop();
+    if (item.max_possible() <= res.size())
+      return res;
+    if (item.members.size() > res.size())
+      res = item.members;
+    if (item.next < members.size())
+      q.push(pick_next(item, members, lan));
+    if (item.next < members.size() - 1)
+      q.push(skip_next(item, members, lan));
+  }
+
+  return res;
+}
+
+bool at_least_one_starts_with(char letter, std::string const &a,
+                              std::string const &b, std::string const &c) {
+  return a.starts_with(letter) || b.starts_with(letter) ||
+         c.starts_with(letter);
+}
+
+unsigned int solve_part_one(std::vector<std::string> const &lines) {
+  Lan lan = Lan::parse(lines);
   std::set<std::set<std::string>> res;
   for (auto const &a : lan.members()) {
     for (auto const &b : lan.neighbors(a)) {
@@ -70,9 +143,23 @@ unsigned int solve_part_one(std::vector<std::string> const &lines) {
   return res.size();
 }
 
-unsigned int solve_part_two(std::vector<std::string> const &lines) {
-  (void)lines;
-  return 24;
+std::string make_password(std::set<std::string> const &members) {
+  std::string res;
+  std::vector<std::string> sorted_names;
+  sorted_names.append_range(members);
+  std::ranges::sort(sorted_names);
+  for (unsigned int i = 0; i < sorted_names.size(); i++) {
+    if (i != 0)
+      res += ",";
+    res += sorted_names[i];
+  }
+  return res;
+}
+
+std::string solve_part_two(std::vector<std::string> const &lines) {
+  Lan lan = Lan::parse(lines);
+  std::set<std::string> max_scc = max_tightly_connected_components(lan);
+  return make_password(max_scc);
 }
 
 #ifdef DOCTEST_CONFIG_DISABLE
@@ -83,7 +170,7 @@ int main(int _, char *argv[]) {
     unsigned int res = solve_part_one(read_input_file(filename));
     std::cout << res << std::endl;
   } else if (part == "2") {
-    unsigned int res = solve_part_two(read_input_file(filename));
+    std::string res = solve_part_two(read_input_file(filename));
     std::cout << res << std::endl;
   }
 }
@@ -107,6 +194,13 @@ TEST_CASE("Example Part One") {
 }
 
 TEST_CASE("Example Part Two") {
-  [[maybe_unused]] unsigned int REPLACE_WHEN_STARTING_PART_TWO = 24;
-  CHECK_EQ(solve_part_two({}), REPLACE_WHEN_STARTING_PART_TWO);
+  CHECK_EQ(solve_part_two({
+               "kh-tc", "qp-kh", "de-cg", "ka-co", "yn-aq", "qp-ub", "cg-tb",
+               "vc-aq", "tb-ka", "wh-tc", "yn-cg", "kh-ub", "ta-co", "de-co",
+               "tc-td", "tb-wq", "wh-td", "ta-ka", "td-qp", "aq-cg", "wq-ub",
+               "ub-vc", "de-ta", "wq-aq", "wq-vc", "wh-yn", "ka-de", "kh-ta",
+               "co-tc", "wh-qp", "tb-vc", "td-yn",
+
+           }),
+           "co,de,ka,ta");
 }
