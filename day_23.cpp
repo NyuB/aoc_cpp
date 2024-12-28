@@ -88,12 +88,6 @@ struct SearchItem {
   unsigned int next;
   unsigned int total;
 
-  bool operator<(SearchItem const &other) const {
-    return max_possible() < other.max_possible();
-  }
-
-  unsigned int max_possible() const { return total - next + members.size(); }
-
   void pick_next(std::vector<std::string> const &all, Lan const &lan) {
     members.insert(all[next]);
     next++;
@@ -120,18 +114,29 @@ SearchItem SearchItem::init(unsigned int total) {
   return SearchItem({}, 0, total);
 }
 
+struct Search {
+  std::vector<std::string> const &members;
+  unsigned int max_possible(SearchItem const &item) const {
+    return members.size() - item.next + item.members.size();
+  }
+  bool operator()(SearchItem const &l, SearchItem const &r) const {
+    return max_possible(l) < max_possible(r);
+  }
+};
+
 std::set<std::string> max_tightly_connected_components(Lan const &lan) {
   std::set<std::string> res;
 
   std::vector<std::string> members;
   members.append_range(lan.members());
+  Search search{members};
 
-  std::priority_queue<SearchItem> q;
-  q.push(SearchItem::init(members.size()));
+  std::priority_queue<SearchItem, std::vector<SearchItem>, Search> q(
+      search, {SearchItem::init(members.size())});
   while (!q.empty()) {
     SearchItem item = q.top();
     q.pop();
-    if (item.max_possible() <= res.size())
+    if (search.max_possible(item) <= res.size())
       return res;
     if (item.members.size() > res.size())
       res = item.members;
