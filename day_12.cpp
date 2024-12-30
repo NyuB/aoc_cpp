@@ -86,10 +86,10 @@ bool start_of_right_side(Grid const &grid, Position const &here) {
  * cell
  *
  *   X      => 0
- * ______
+ * -----
  *
  * |X       => 2
- *  ---
+ *  ----
  *
  * _   _
  *  |X|     => 3
