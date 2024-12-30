@@ -62,5 +62,6 @@ day(21 125742 TODO)
 day(22 20401393616 2272)
 day(23 926 "az,ed,hz,it,ld,nh,pc,td,ty,ux,wc,yg,zz")
 day(24 55730288838374 "fvw,grf,mdb,nwq,wpq,z18,z22,z36")
+day(25 TODO TODO)
 
 file(DOWNLOAD https://github.com/doctest/doctest/releases/download/v2.4.11/doctest.h doctest/doctest.h EXPECTED_MD5 0b7fbd89a158063beecba78eb8400fad)
