@@ -24,10 +24,10 @@ test_%: rebuild %.cpp %.hpp
 	build\$*_test.exe 
 
 rebuild: configure FORCE
-	cmake --build build
+	cmake --build --preset "Clang+Ninja"
 
-configure: CMakeLists.txt
-	cmake -B build -G Ninja
+configure: CMakeLists.txt CMakePresets.json
+	cmake --preset "Clang+Ninja"
 
 day_%.cpp:
 	$(PY) day_template.py $*

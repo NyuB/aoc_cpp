@@ -6,6 +6,7 @@ doctest
 
 # IDE specific
 .vscode
+.cache
 
 # Python cache
 __pycache__
